@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Paper, Box, Typography, IconButton } from "@mui/material";
+import MenuItem from "@mui/material/MenuItem";
 import TextField from "../Inputs/TextField";
 import Checkbox from "../Inputs/Checkbox";
 import DatePicker from "../Inputs/DatePicker";
@@ -15,6 +16,8 @@ const initialForm = {
   invoice_number: "",
   mark: "",
   project: "",
+  company: "",
+  users: "",
   invoice_date: "",
   isPaid: false,
   comments: "",
@@ -22,6 +25,11 @@ const initialForm = {
   total_amount: "",
   file: null, // ✅ single image
 };
+
+// Fill these with your static options.
+const PROJECT_OPTIONS = ["KIRKIS","ALAMANAS","ARMONIAS-RIVIERA PEARL","AIOLOU","APOLLONOS","HERITAGE OT11","HERITAGE OT23","HERITAGE OT29","HERITAGE OT36","IOUSTINIANOU","LAGONISI","FALIROU2","PORT OF KORINTHOS","PALLINI","CHLOIS 29 VOULA","ERMA , LEOF ATHINWN 122 ATHENS","LAZARAKI 57","JULIA & CHRISTIAN KARAM_AFRODITIS","REAL ESTATE","HOSPITALITY"];
+const COMPANY_OPTIONS = ["THE OLON DEVELOPMENTS ΜΟΝΟΠΡΟΣΩΠΗ IKE","HERITAGE VENTURES IKE","ALAMANAS ONE ΙΚΕ","A15 Hotel Ventures ΜΟΝ IKE","Ο ΛΥΡΑΣ ΞΕΝΟΔΟΧΕΙΑ & ΕΜΠΟΡΙΚΑΙ ΕΠΙΧΕΙΡΗΣΕΙΣ ΜΟΝ/ΠΗ ΑΕ","AIOLOU HAB MON IKE","LAGONISI VENTURES IKE","HOT ΜΟΝΟΠΡΟΣΩΠΗ ΙΚΕ ΤΕΧΝΙΚΗ ΕΤΑΙΡΙΑ & ΕΚΜ/ΣΗ ΑΚΙΝΗΤΩΝ","THE OLON HOSPITALITY ΙΚΕ"];
+const USER_OPTIONS = ["Δαλιάνη Αικατερίνη","Αρχοντάκης Παπαδάκης Ιωάννης","Νικολάτου Κωνσταντίνα","Στάθης Σπυρίδων","Γιώργος Μπερσεντές","Κόκκαλης Χαράλαμπος","Abuyousef Kamel","Mamiseishvili Lasha","Χαραλαμποπούλου Φωτεινή","Τσόκα Έλενα","Πάλιος Κωνσταντίνος","Λίμνιαλης Γεωργιος","Χριστίνα Καλομηνίδου","Σπυρος Σιδέρης","Γεώργιος Σωτηρχόπουλος"];
 
 const isEmpty = (v) => String(v ?? "").trim().length === 0;
 const isNumeric = (v) => /^[0-9]+$/.test(String(v ?? "").trim());
@@ -55,6 +63,8 @@ export default function InvoiceForm({
       invoice_number: true,
       mark: true,
       project: true,
+      company: true,
+      users: true,
       invoice_date: true,
       isPaid: true,
       comments: true,
@@ -67,6 +77,8 @@ export default function InvoiceForm({
     const e = {};
     // Required text fields
     if (isEmpty(formData.project)) e.project = t("validation.required");
+    if (isEmpty(formData.company)) e.company = t("validation.required");
+    if (isEmpty(formData.users)) e.users = t("validation.required");
     // Comments are optional
     if (isEmpty(formData.vendor_name)) e.vendor_name = t("validation.required");
     // Required numeric-ish fields
@@ -230,8 +242,56 @@ export default function InvoiceForm({
           onBlur={() => markTouched("project")}
           error={showError("project") && !!errors.project}
           helperText={showError("project") ? errors.project : ""}
+          select
           size="small"
-        />
+        >
+          <MenuItem value="">
+            <em>-</em>
+          </MenuItem>
+          {PROJECT_OPTIONS.map((option) => (
+            <MenuItem key={option} value={option}>
+              {option}
+            </MenuItem>
+          ))}
+        </TextField>
+        <TextField
+          label={t("fields.company")}
+          value={formData.company}
+          onChange={(e) => setField("company", e.target.value)}
+          onBlur={() => markTouched("company")}
+          error={showError("company") && !!errors.company}
+          helperText={showError("company") ? errors.company : ""}
+          select
+          size="small"
+        >
+          <MenuItem value="">
+            <em>-</em>
+          </MenuItem>
+          {COMPANY_OPTIONS.map((option) => (
+            <MenuItem key={option} value={option}>
+              {option}
+            </MenuItem>
+          ))}
+        </TextField>
+        <TextField
+          label={t("fields.users")}
+          value={formData.users}
+          onChange={(e) => setField("users", e.target.value)}
+          onBlur={() => markTouched("users")}
+          error={showError("users") && !!errors.users}
+          helperText={showError("users") ? errors.users : ""}
+          select
+          size="small"
+        >
+          <MenuItem value="">
+            <em>-</em>
+          </MenuItem>
+          {USER_OPTIONS.map((option) => (
+            <MenuItem key={option} value={option}>
+              {option}
+            </MenuItem>
+          ))}
+        </TextField>
         <DatePicker
           label={t("fields.invoice_date")}
           value={formData.invoice_date}
