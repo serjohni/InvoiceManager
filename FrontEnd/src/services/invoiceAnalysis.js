@@ -1,11 +1,13 @@
 import axios from "axios";
 
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+
 export const analyzeInvoiceImage = async (file, { signal } = {}) => {
   const formData = new FormData();
   formData.append("image", file);
 
   const response = await axios.post(
-    "http://localhost:5000/api/upload/image",
+    `${apiBaseUrl}/api/upload/image`,
     formData,
     {
       headers: {

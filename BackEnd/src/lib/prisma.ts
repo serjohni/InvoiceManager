@@ -1,13 +1,11 @@
 import { PrismaClient } from '../generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { config } from '../config/env';
+import { config, requireEnv } from '../config/env';
 
-// const connectionString = process.env.DATABASE_URL;
-// if (!connectionString || typeof connectionString !== 'string') {
-//     throw new Error('DATABASE_URL environment variable is required and must be a string');
-//   }
+const connectionString = requireEnv(config.dbConnectionString, "DATABASE_URL");
+
 const adapter = new PrismaPg({ 
-  connectionString: "postgresql://postgres:QiUwrtjlchL7jwBAXN7R@localhost:5432/invoice_manager"
+  connectionString
 });
 
 let dbClient: PrismaClient;

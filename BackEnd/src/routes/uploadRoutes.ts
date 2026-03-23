@@ -4,10 +4,10 @@ import FormData from "form-data";
 import fs from "fs";
 import path from "path";
 import axios from "axios";
+import { config, requireEnv } from "../config/env";
 
 const uploadRouter = Router();
-
-const N8N_WEBHOOK_URL = "https://n8n.3dforge.fun/webhook/upload-invoice-image";
+const n8nWebhookUrl = requireEnv(config.n8nWebhookUrl, "N8N_WEBHOOK_URL");
 
 // Upload single image
 uploadRouter.post("/image", upload.single("image"), async (req, res) => {
@@ -24,7 +24,7 @@ uploadRouter.post("/image", upload.single("image"), async (req, res) => {
       contentType: req.file.mimetype,
     });
 
-    const webhookResponse = await axios.post(N8N_WEBHOOK_URL, formData, {
+    const webhookResponse = await axios.post(n8nWebhookUrl, formData, {
       headers: formData.getHeaders(),
     });
 
