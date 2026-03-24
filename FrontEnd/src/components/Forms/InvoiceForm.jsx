@@ -11,25 +11,84 @@ import { analyzeInvoiceImage } from "../../services/invoiceAnalysis";
 import { useTranslation } from "react-i18next";
 
 const initialForm = {
-  afm: "",
-  invoice_series: "",
-  invoice_number: "",
+  document_type: "",
+  recipient_code: "",
   mark: "",
+  series: "",
+  number: "",
+  issuer_vat_number: "",
+  issuer_name: "",
+  recipient_vat_number: "",
+  recipient_name: "",
+  payment_method: "",
+  value_before_discount: "",
+  discount_amount: "",
+  net_amount: "",
+  vat_amount: "",
+  withholding_amount: "",
+  fees_or_stamps: "",
+  total_amount: "",
+  issuer_iban: "",
+  is_paid: false,
+  comments: "",
+  file: null, // ✅ single image
   project: "",
   company: "",
   users: "",
   invoice_date: "",
-  isPaid: false,
-  comments: "",
-  vendor_name: "",
-  total_amount: "",
-  file: null, // ✅ single image
 };
 
 // Fill these with your static options.
-const PROJECT_OPTIONS = ["KIRKIS","ALAMANAS","ARMONIAS-RIVIERA PEARL","AIOLOU","APOLLONOS","HERITAGE OT11","HERITAGE OT23","HERITAGE OT29","HERITAGE OT36","IOUSTINIANOU","LAGONISI","FALIROU2","PORT OF KORINTHOS","PALLINI","CHLOIS 29 VOULA","ERMA , LEOF ATHINWN 122 ATHENS","LAZARAKI 57","JULIA & CHRISTIAN KARAM_AFRODITIS","REAL ESTATE","HOSPITALITY"];
-const COMPANY_OPTIONS = ["THE OLON DEVELOPMENTS ΜΟΝΟΠΡΟΣΩΠΗ IKE","HERITAGE VENTURES IKE","ALAMANAS ONE ΙΚΕ","A15 Hotel Ventures ΜΟΝ IKE","Ο ΛΥΡΑΣ ΞΕΝΟΔΟΧΕΙΑ & ΕΜΠΟΡΙΚΑΙ ΕΠΙΧΕΙΡΗΣΕΙΣ ΜΟΝ/ΠΗ ΑΕ","AIOLOU HAB MON IKE","LAGONISI VENTURES IKE","HOT ΜΟΝΟΠΡΟΣΩΠΗ ΙΚΕ ΤΕΧΝΙΚΗ ΕΤΑΙΡΙΑ & ΕΚΜ/ΣΗ ΑΚΙΝΗΤΩΝ","THE OLON HOSPITALITY ΙΚΕ"];
-const USER_OPTIONS = ["Δαλιάνη Αικατερίνη","Αρχοντάκης Παπαδάκης Ιωάννης","Νικολάτου Κωνσταντίνα","Στάθης Σπυρίδων","Γιώργος Μπερσεντές","Κόκκαλης Χαράλαμπος","Abuyousef Kamel","Mamiseishvili Lasha","Χαραλαμποπούλου Φωτεινή","Τσόκα Έλενα","Πάλιος Κωνσταντίνος","Λίμνιαλης Γεωργιος","Χριστίνα Καλομηνίδου","Σπυρος Σιδέρης","Γεώργιος Σωτηρχόπουλος"];
+const PROJECT_OPTIONS = [
+  "KIRKIS",
+  "ALAMANAS",
+  "ARMONIAS-RIVIERA PEARL",
+  "AIOLOU",
+  "APOLLONOS",
+  "HERITAGE OT11",
+  "HERITAGE OT23",
+  "HERITAGE OT29",
+  "HERITAGE OT36",
+  "IOUSTINIANOU",
+  "LAGONISI",
+  "FALIROU2",
+  "PORT OF KORINTHOS",
+  "PALLINI",
+  "CHLOIS 29 VOULA",
+  "ERMA , LEOF ATHINWN 122 ATHENS",
+  "LAZARAKI 57",
+  "JULIA & CHRISTIAN KARAM_AFRODITIS",
+  "REAL ESTATE",
+  "HOSPITALITY",
+];
+const COMPANY_OPTIONS = [
+  "THE OLON DEVELOPMENTS ΜΟΝΟΠΡΟΣΩΠΗ IKE",
+  "HERITAGE VENTURES IKE",
+  "ALAMANAS ONE ΙΚΕ",
+  "A15 Hotel Ventures ΜΟΝ IKE",
+  "Ο ΛΥΡΑΣ ΞΕΝΟΔΟΧΕΙΑ & ΕΜΠΟΡΙΚΑΙ ΕΠΙΧΕΙΡΗΣΕΙΣ ΜΟΝ/ΠΗ ΑΕ",
+  "AIOLOU HAB MON IKE",
+  "LAGONISI VENTURES IKE",
+  "HOT ΜΟΝΟΠΡΟΣΩΠΗ ΙΚΕ ΤΕΧΝΙΚΗ ΕΤΑΙΡΙΑ & ΕΚΜ/ΣΗ ΑΚΙΝΗΤΩΝ",
+  "THE OLON HOSPITALITY ΙΚΕ",
+];
+const USER_OPTIONS = [
+  "Δαλιάνη Αικατερίνη",
+  "Αρχοντάκης Παπαδάκης Ιωάννης",
+  "Νικολάτου Κωνσταντίνα",
+  "Στάθης Σπυρίδων",
+  "Γιώργος Μπερσεντές",
+  "Κόκκαλης Χαράλαμπος",
+  "Abuyousef Kamel",
+  "Mamiseishvili Lasha",
+  "Χαραλαμποπούλου Φωτεινή",
+  "Τσόκα Έλενα",
+  "Πάλιος Κωνσταντίνος",
+  "Λίμνιαλης Γεωργιος",
+  "Χριστίνα Καλομηνίδου",
+  "Σπυρος Σιδέρης",
+  "Γεώργιος Σωτηρχόπουλος",
+];
 
 const isEmpty = (v) => String(v ?? "").trim().length === 0;
 const isNumeric = (v) => /^[0-9]+$/.test(String(v ?? "").trim());
@@ -58,19 +117,29 @@ export default function InvoiceForm({
 
   const markAllTouched = () =>
     setTouched({
-      afm: true,
-      invoice_series: true,
-      invoice_number: true,
-      mark: true,
+      recipient_code: true,
+      document_type: true,
+      series: true,
+      number: true,
+      issuer_vat_number: true,
+      issuer_name: true,
+      recipient_vat_number: true,
+      recipient_name: true,
+      payment_method: true,
+      value_before_discount: true,
+      discount_amount: true,
+      net_amount: true,
+      vat_amount: true,
+      withholding_amount: true,
+      fees_or_stamps: true,
+      total_amount: true,
+      issuer_iban: true,
+      is_paid: true,
+      comments: true,
       project: true,
       company: true,
       users: true,
       invoice_date: true,
-      isPaid: true,
-      comments: true,
-      vendor_name: true,
-      total_amount: true,
-      file: true,
     });
 
   const errors = useMemo(() => {
@@ -80,27 +149,26 @@ export default function InvoiceForm({
     if (isEmpty(formData.company)) e.company = t("validation.required");
     if (isEmpty(formData.users)) e.users = t("validation.required");
     // Comments are optional
-    if (isEmpty(formData.vendor_name)) e.vendor_name = t("validation.required");
+    if (isEmpty(formData.issuer_name)) e.issuer_name = t("validation.required");
     // Required numeric-ish fields
-    if (isEmpty(formData.afm)) e.afm = t("validation.required");
-    else if (!isNumeric(formData.afm)) e.afm = t("validation.numbersOnly");
-    else if (String(formData.afm).trim().length !== 9) e.afm = t("validation.afmLength");
-    if (isEmpty(formData.invoice_series)) e.invoice_series = t("validation.required");
-    else if (!isNumeric(formData.invoice_series)) e.invoice_series = t("validation.numbersOnly");
-    if (isEmpty(formData.invoice_number)) e.invoice_number = t("validation.required");
-    else if (!isNumeric(formData.invoice_number)) e.invoice_number = t("validation.numbersOnly");
-    if (isEmpty(formData.mark)) e.mark = t("validation.required");
-    else if (!isNumeric(formData.mark)) e.mark = t("validation.numbersOnly");
+    if (isEmpty(formData.issuer_vat_number)) e.issuer_vat_number = t("validation.required");
+    else if (!isNumeric(formData.issuer_vat_number)) e.issuer_vat_number = t("validation.numbersOnly");
+    else if (String(formData.issuer_vat_number).trim().length !== 9)
+      e.issuer_vat_number = t("validation.afmLength");
     // Date required
-    if (isEmpty(formData.invoice_date)) e.invoice_date = t("validation.required");
+    if (isEmpty(formData.invoice_date))
+      e.invoice_date = t("validation.required");
     // Checkbox required (since you said all fields required)
-    if (formData.isPaid !== true && formData.isPaid !== false) e.isPaid = t("validation.checkbox");
+    if (formData.is_paid !== true && formData.is_paid !== false)
+      e.is_paid = t("validation.checkbox");
     // If you literally mean user must explicitly choose: force true/false is already explicit.
     // If you mean "must be checked", uncomment:
-    // if (!formData.isPaid) e.isPaid = "Πρέπει να επιλεγεί.";
+    // if (!formData.is_paid) e.is_paid = "Πρέπει να επιλεγεί.";
     // Total price required + valid money
-    if (isEmpty(formData.total_amount)) e.total_amount = t("validation.required");
-    else if (!isMoney(formData.total_amount)) e.total_amount = t("validation.money");
+    if (isEmpty(formData.total_amount))
+      e.total_amount = t("validation.required");
+    else if (!isMoney(formData.total_amount))
+      e.total_amount = t("validation.money");
     // File required
     // if (!formData.file) e.file = t("validation.uploadReceipt");
     return e;
@@ -111,13 +179,13 @@ export default function InvoiceForm({
     () =>
       Boolean(
         formData.file ||
-        formData.isPaid ||
+        formData.is_paid ||
         Object.entries(formData).some(([key, value]) => {
-          if (key === "file" || key === "isPaid") return false;
+          if (key === "file" || key === "is_paid") return false;
           return String(value ?? "").trim().length > 0;
-        })
+        }),
       ),
-    [formData]
+    [formData],
   );
 
   // push updates up
@@ -180,7 +248,11 @@ export default function InvoiceForm({
           <Typography variant="subtitle1" className="invoice-card__title">
             {t("invoice.title", { index: formIndex + 1 })}
           </Typography>
-          <Typography variant="caption" color="text.secondary" className="invoice-card__hint">
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            className="invoice-card__hint"
+          >
             {t("invoice.hint")}
           </Typography>
         </Box>
@@ -196,32 +268,32 @@ export default function InvoiceForm({
       </Box>
       <Box className="invoice-card__grid">
         <TextField
-          label={t("fields.afm")}
-          value={formData.afm}
-          onChange={(e) => setField("afm", e.target.value)}
-          onBlur={() => markTouched("afm")}
-          error={showError("afm") && !!errors.afm}
-          helperText={showError("afm") ? errors.afm : ""}
+          label={t("fields.issuer_vat_number")}
+          value={formData.issuer_vat_number}
+          onChange={(e) => setField("issuer_vat_number", e.target.value)}
+          onBlur={() => markTouched("issuer_vat_number")}
+          error={showError("issuer_vat_number") && !!errors.issuer_vat_number}
+          helperText={showError("issuer_vat_number") ? errors.issuer_vat_number : ""}
           inputMode="numeric"
           size="small"
         />
         <TextField
-          label={t("fields.invoice_series")}
-          value={formData.invoice_series}
-          onChange={(e) => setField("invoice_series", e.target.value)}
-          onBlur={() => markTouched("invoice_series")}
-          error={showError("invoice_series") && !!errors.invoice_series}
-          helperText={showError("invoice_series") ? errors.invoice_series : ""}
+          label={t("fields.series")}
+          value={formData.series}
+          onChange={(e) => setField("series", e.target.value)}
+          onBlur={() => markTouched("series")}
+          error={showError("series") && !!errors.series}
+          helperText={showError("series") ? errors.series : ""}
           inputMode="numeric"
           size="small"
         />
         <TextField
-          label={t("fields.invoice_number")}
-          value={formData.invoice_number}
-          onChange={(e) => setField("invoice_number", e.target.value)}
-          onBlur={() => markTouched("invoice_number")}
-          error={showError("invoice_number") && !!errors.invoice_number}
-          helperText={showError("invoice_number") ? errors.invoice_number : ""}
+          label={t("fields.number")}
+          value={formData.number}
+          onChange={(e) => setField("number", e.target.value)}
+          onBlur={() => markTouched("number")}
+          error={showError("number") && !!errors.number}
+          helperText={showError("number") ? errors.number : ""}
           inputMode="numeric"
           size="small"
         />
@@ -302,12 +374,12 @@ export default function InvoiceForm({
           size="small"
         />
         <TextField
-          label={t("fields.vendor_name")}
-          value={formData.vendor_name}
-          onChange={(e) => setField("vendor_name", e.target.value)}
-          onBlur={() => markTouched("vendor_name")}
-          error={showError("vendor_name") && !!errors.vendor_name}
-          helperText={showError("vendor_name") ? errors.vendor_name : ""}
+          label={t("fields.issuer_name")}
+          value={formData.issuer_name}
+          onChange={(e) => setField("issuer_name", e.target.value)}
+          onBlur={() => markTouched("issuer_name")}
+          error={showError("issuer_name") && !!errors.issuer_name}
+          helperText={showError("issuer_name") ? errors.issuer_name : ""}
           size="small"
         />
         <TextField
@@ -322,15 +394,15 @@ export default function InvoiceForm({
         />
         <Box className="invoice-card__row-checkbox">
           <Checkbox
-            label={t("fields.isPaid")}
-            checked={formData.isPaid}
-            onChange={(e) => setField("isPaid", e.target.checked)}
-            onBlur={() => markTouched("isPaid")}
+            label={t("fields.is_paid")}
+            checked={formData.is_paid}
+            onChange={(e) => setField("is_paid", e.target.checked)}
+            onBlur={() => markTouched("is_paid")}
             size="small"
           />
-          {showError("isPaid") && errors.isPaid ? (
+          {showError("is_paid") && errors.is_paid ? (
             <Typography variant="caption" color="error">
-              {errors.isPaid}
+              {errors.is_paid}
             </Typography>
           ) : null}
         </Box>
@@ -356,7 +428,11 @@ export default function InvoiceForm({
             isBusy={isAnalyzing}
           />
           {analysisStatus ? (
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ mt: 0.5 }}
+            >
               {t(`analysis.${analysisStatus}`)}
             </Typography>
           ) : null}
