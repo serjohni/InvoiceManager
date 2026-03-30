@@ -18,9 +18,6 @@ services:
     image: n8nio/n8n:latest
     restart: unless-stopped
     environment:
-      N8N_BLOCK_FS_WRITE_ACCESS_BY_DEFAULT: false
-      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: false
-      N8N_BLOCKED_BINARY_DATA_MODES: none
       N8N_SECURE_COOKIE: false
       N8N_HOST: 0.0.0.0
       N8N_PORT: 5678
@@ -33,7 +30,7 @@ services:
       - "${N8N_PORT:-5678}:5678"
     volumes:
       - n8n_data:/home/node/.n8n
-      - /mnt/nas_mount/07. Other/invoice-manager:/home/node/nas_files
+      - /mnt/nas_mount/07. Other/invoice-manager:/home/node/.n8n-files/nas_files
 
   backend:
     build:
