@@ -30,7 +30,7 @@ services:
       - "${N8N_PORT:-5678}:5678"
     volumes:
       - n8n_data:/home/node/.n8n
-      - /mnt/nas_mount:/home/node/nas_files
+      - /mnt/nas_mount/07. Other/invoice-manager:/home/node/nas_files
 
   backend:
     build:
