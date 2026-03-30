@@ -16,6 +16,7 @@ services:
 
   n8n:
     image: n8nio/n8n:latest
+    user: root
     restart: unless-stopped
     environment:
       N8N_SECURE_COOKIE: false
