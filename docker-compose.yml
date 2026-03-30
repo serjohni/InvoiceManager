@@ -19,6 +19,8 @@ services:
     restart: unless-stopped
     environment:
       N8N_BLOCK_FS_WRITE_ACCESS_BY_DEFAULT: false
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: false
+      N8N_BLOCKED_BINARY_DATA_MODES: none
       N8N_SECURE_COOKIE: false
       N8N_HOST: 0.0.0.0
       N8N_PORT: 5678
