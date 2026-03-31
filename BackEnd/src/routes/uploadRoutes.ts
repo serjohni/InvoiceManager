@@ -25,7 +25,7 @@ uploadRouter.post("/image", upload.single("image"), async (req, res) => {
     });
 
     const webhookResponse = await axios.post(n8nWebhookUrl, formData, {
-      headers: formData.getHeaders(),
+        headers: formData.getHeaders(),
     });
 
     res.status(201).json({
@@ -39,7 +39,7 @@ uploadRouter.post("/image", upload.single("image"), async (req, res) => {
       },
       webhook: {
         status: webhookResponse.status,
-        data: webhookResponse.data,
+        data: webhookResponse.data[0],
       },
     });
   } catch (error: any) {
@@ -55,7 +55,7 @@ uploadRouter.post("/image", upload.single("image"), async (req, res) => {
 uploadRouter.post("/images", upload.array("images", 10), (req, res) => {
   try {
     const files = req.files as Express.Multer.File[];
-    
+
     if (!files || files.length === 0) {
       return res.status(400).json({ error: "No image files provided" });
     }
