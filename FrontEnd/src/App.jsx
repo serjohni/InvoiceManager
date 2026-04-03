@@ -14,10 +14,18 @@ import InvoiceForm from "./components/Forms/InvoiceForm";
 import "./App.css";
 import AddIcon from "@mui/icons-material/Add";
 import { useTranslation } from "react-i18next";
+import axios from "axios";
+import { createInvoiceSchema } from "./schemas/invoiceSchemas";
+
+const apiBaseUrl = (
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
+).replace(/\/$/, "");
 
 function App() {
   const [forms, setForms] = useState([{}]);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showError, setShowError] = useState(false);
+const [errorMessage, setErrorMessage] = useState("");
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const { t, i18n } = useTranslation();
 
@@ -42,18 +50,35 @@ function App() {
     return forms.every((f) => f?.isValid === true);
   }, [forms]);
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     setSubmitAttempted(true);
 
     if (!allValid) {
       console.log("Validation failed", forms);
       return;
     }
-
-    console.log("All forms data:", forms);
-    setShowSuccess(true);
+    try {
+      await Promise.all(
+        forms.map((form) => {
+          const payload = createInvoiceSchema.parse(form);
+          return axios.post(`${apiBaseUrl}/api/invoices`, payload);
+        }),
+      );
+      setShowSuccess(true);
+    } catch (error) {
+      console.error("Error creating invoices:", error);
+      const fallback = t("app.error");
+  const message =
+    axios.isAxiosError(error)
+      ? error.response?.data?.message || fallback
+      : fallback;
+  setErrorMessage(message);
+  setShowError(true);
+    }
+    // console.log("All forms data:", forms);
+    // setShowSuccess(true);
   };
-
+  const handleCloseError = () => setShowError(false);
   const handleCloseSuccess = () => setShowSuccess(false);
 
   const handleLanguageChange = (language) => {
@@ -77,7 +102,14 @@ function App() {
           borderColor: "divider",
         }}
       >
-        <Typography sx={{ fontSize: 14, fontWeight: 500, color: "#ffffff", letterSpacing: 0 }}>
+        <Typography
+          sx={{
+            fontSize: 14,
+            fontWeight: 500,
+            color: "#ffffff",
+            letterSpacing: 0,
+          }}
+        >
           Invoice Manager
         </Typography>
         <ToggleButtonGroup
@@ -145,7 +177,11 @@ function App() {
         </Paper>
 
         <Box className="app-actions">
-          <Button variant="contained" onClick={handleComplete} disabled={!allValid}>
+          <Button
+            variant="contained"
+            onClick={handleComplete}
+            disabled={!allValid}
+          >
             {t("app.completeReview")}
           </Button>
         </Box>
@@ -156,10 +192,24 @@ function App() {
           onClose={handleCloseSuccess}
           anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
         >
-          <Alert onClose={handleCloseSuccess} severity="success" sx={{ width: "100%" }}>
+          <Alert
+            onClose={handleCloseSuccess}
+            severity="success"
+            sx={{ width: "100%" }}
+          >
             {t("app.success")}
           </Alert>
         </Snackbar>
+        <Snackbar
+  open={showError}
+  autoHideDuration={6000}
+  onClose={handleCloseError}
+  anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+>
+  <Alert onClose={handleCloseError} severity="error" sx={{ width: "100%" }}>
+    {errorMessage}
+  </Alert>
+</Snackbar>
       </Container>
     </>
   );

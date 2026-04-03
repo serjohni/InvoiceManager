@@ -24,9 +24,13 @@ uploadRouter.post("/image", upload.single("image"), async (req, res) => {
       contentType: req.file.mimetype,
     });
 
-    const webhookResponse = await axios.post(n8nWebhookUrl, formData, {
+    const webhookResponse = await axios.post(
+      "http://100.104.68.112:5678/webhook/upload-invoice-image",
+      formData,
+      {
         headers: formData.getHeaders(),
-    });
+      },
+    );
 
     res.status(201).json({
       message: "Image uploaded and forwarded successfully",

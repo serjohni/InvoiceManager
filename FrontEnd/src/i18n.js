@@ -25,6 +25,7 @@ i18n.use(initReactI18next).init({
           addInvoice: "Προσθήκη τιμολογίου",
           completeReview: "Ολοκλήρωση ελέγχου",
           success: "Η καταχώρηση των τιμολογίων ολοκληρώθηκε επιτυχώς.",
+          error: "Η καταχώρηση των τιμολογίων απέτυχε. Παρακαλώ δοκίμασε ξανά.",
           language: "Γλώσσα",
         },
         invoice: {
@@ -96,6 +97,7 @@ i18n.use(initReactI18next).init({
           addInvoice: "Add invoice",
           completeReview: "Complete review",
           success: "Submission completed successfully.",
+          error: "Submission failed. Please try again.",
           language: "Language",
         },
         invoice: {
