@@ -6,6 +6,7 @@ import userRouter from "./routes/userRoutes";
 import invoiceRouter from "./routes/invoiceRoutes";
 import uploadRouter from "./routes/uploadRoutes";
 import { config } from "./config/env";
+import { authMiddleware } from "./middlewares/authMiddleware";
 
 const app = express();
 const uploadsDir = path.resolve(process.cwd(), "uploads");
@@ -17,15 +18,15 @@ app.use(cors());
 app.use(express.json());
 
 // Serve uploaded files statically
-app.use("/uploads", express.static(uploadsDir));
+app.use("/uploads", authMiddleware, express.static(uploadsDir));
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
 app.use("/api/users", userRouter);
-app.use("/api/invoices", invoiceRouter);
-app.use("/api/upload", uploadRouter);
+app.use("/api/invoices", authMiddleware, invoiceRouter);
+app.use("/api/upload", authMiddleware, uploadRouter);
 
 if (hasFrontendBuild) {
   app.use(express.static(frontendDistPath));

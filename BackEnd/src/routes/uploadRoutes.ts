@@ -7,7 +7,7 @@ import axios from "axios";
 import { config, requireEnv } from "../config/env";
 
 const uploadRouter = Router();
-const n8nWebhookUrl = requireEnv(config.n8nWebhookUrl, "N8N_WEBHOOK_URL");
+//const n8nWebhookUrl = requireEnv(config.n8nWebhookUrl, "N8N_WEBHOOK_URL");
 
 // Upload single image
 uploadRouter.post("/image", upload.single("image"), async (req, res) => {

@@ -1,0 +1,35 @@
+@baseUrl = http://localhost:8080
+@username = vliapis
+@password = admin123
+
+### Health check
+GET {{baseUrl}}/health
+Accept: application/json
+
+### Login (get JWT access token)
+# @name login
+POST {{baseUrl}}/api/users/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "user_name": "{{username}}",
+  "password": "{{password}}"
+}
+
+### Save token from login response
+@accessToken = {{login.response.body.accessToken}}
+
+### Negative test: protected endpoint without token (should be 401 once auth is applied)
+GET {{baseUrl}}/api/invoices
+Accept: application/json
+
+### Protected endpoint with Bearer token
+GET {{baseUrl}}/api/invoices
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+### Protected endpoint with invalid token
+GET {{baseUrl}}/api/invoices
+Authorization: Bearer invalid.token.value
+Accept: application/json
