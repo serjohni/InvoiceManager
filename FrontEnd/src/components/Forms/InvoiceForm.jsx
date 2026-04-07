@@ -276,6 +276,82 @@ export default function InvoiceForm({
           <DeleteOutlineIcon fontSize="small" />
         </IconButton>
       </Box>
+      <Box className="invoice-card__grid invoice-card__grid--top">
+        <TextField
+          label={t("fields.project")}
+          value={formData.project}
+          onChange={(e) => setField("project", e.target.value)}
+          onBlur={() => markTouched("project")}
+          error={showError("project") && !!errors.project}
+          helperText={showError("project") ? errors.project : ""}
+          select
+          size="small"
+        >
+          <MenuItem value="">
+            <em>-</em>
+          </MenuItem>
+          {PROJECT_OPTIONS.map((option) => (
+            <MenuItem key={option} value={option}>
+              {option}
+            </MenuItem>
+          ))}
+        </TextField>
+        <TextField
+          label={t("fields.company")}
+          value={formData.company}
+          onChange={(e) => setField("company", e.target.value)}
+          onBlur={() => markTouched("company")}
+          error={showError("company") && !!errors.company}
+          helperText={showError("company") ? errors.company : ""}
+          select
+          size="small"
+        >
+          <MenuItem value="">
+            <em>-</em>
+          </MenuItem>
+          {COMPANY_OPTIONS.map((option) => (
+            <MenuItem key={option} value={option}>
+              {option}
+            </MenuItem>
+          ))}
+        </TextField>
+        <TextField
+          label={t("fields.number")}
+          value={formData.number}
+          onChange={(e) => setField("number", e.target.value)}
+          onBlur={() => markTouched("number")}
+          error={showError("number") && !!errors.number}
+          helperText={showError("number") ? errors.number : ""}
+          inputMode="numeric"
+          size="small"
+        />
+        <TextField
+          label={t("fields.issuer_vat_number")}
+          value={formData.issuer_vat_number}
+          onChange={(e) => setField("issuer_vat_number", e.target.value)}
+          onBlur={() => markTouched("issuer_vat_number")}
+          error={showError("issuer_vat_number") && !!errors.issuer_vat_number}
+          helperText={
+            showError("issuer_vat_number") ? errors.issuer_vat_number : ""
+          }
+          inputMode="numeric"
+          size="small"
+        />
+        <Box className="invoice-card__row-checkbox">
+          <Checkbox
+            label={t("fields.is_paid")}
+            checked={formData.is_paid}
+            onChange={(e) => setField("is_paid", e.target.checked)}
+            onBlur={() => markTouched("is_paid")}
+            size="small"
+          />
+          {showError("is_paid") && errors.is_paid ? (
+            <Typography variant="caption" color="error">
+              {errors.is_paid}
+            </Typography>
+          ) : null}
+        </Box>
+      </Box>
       <Box className="invoice-card__grid">
         <TextField
           label={t("fields.document_type")}
@@ -312,28 +388,6 @@ export default function InvoiceForm({
           onBlur={() => markTouched("series")}
           error={showError("series") && !!errors.series}
           helperText={showError("series") ? errors.series : ""}
-          inputMode="numeric"
-          size="small"
-        />
-        <TextField
-          label={t("fields.number")}
-          value={formData.number}
-          onChange={(e) => setField("number", e.target.value)}
-          onBlur={() => markTouched("number")}
-          error={showError("number") && !!errors.number}
-          helperText={showError("number") ? errors.number : ""}
-          inputMode="numeric"
-          size="small"
-        />
-        <TextField
-          label={t("fields.issuer_vat_number")}
-          value={formData.issuer_vat_number}
-          onChange={(e) => setField("issuer_vat_number", e.target.value)}
-          onBlur={() => markTouched("issuer_vat_number")}
-          error={showError("issuer_vat_number") && !!errors.issuer_vat_number}
-          helperText={
-            showError("issuer_vat_number") ? errors.issuer_vat_number : ""
-          }
           inputMode="numeric"
           size="small"
         />
@@ -377,25 +431,6 @@ export default function InvoiceForm({
           helperText={showError("recipient_code") ? errors.recipient_code : ""}
           size="small"
         />
-        <TextField
-          label={t("fields.project")}
-          value={formData.project}
-          onChange={(e) => setField("project", e.target.value)}
-          onBlur={() => markTouched("project")}
-          error={showError("project") && !!errors.project}
-          helperText={showError("project") ? errors.project : ""}
-          select
-          size="small"
-        >
-          <MenuItem value="">
-            <em>-</em>
-          </MenuItem>
-          {PROJECT_OPTIONS.map((option) => (
-            <MenuItem key={option} value={option}>
-              {option}
-            </MenuItem>
-          ))}
-        </TextField>
         <TextField
           label={t("fields.payment_method")}
           value={formData.payment_method}
@@ -494,25 +529,6 @@ export default function InvoiceForm({
           size="small"
         />
         <TextField
-          label={t("fields.company")}
-          value={formData.company}
-          onChange={(e) => setField("company", e.target.value)}
-          onBlur={() => markTouched("company")}
-          error={showError("company") && !!errors.company}
-          helperText={showError("company") ? errors.company : ""}
-          select
-          size="small"
-        >
-          <MenuItem value="">
-            <em>-</em>
-          </MenuItem>
-          {COMPANY_OPTIONS.map((option) => (
-            <MenuItem key={option} value={option}>
-              {option}
-            </MenuItem>
-          ))}
-        </TextField>
-        <TextField
           label={t("fields.category")}
           value={formData.category}
           onChange={(e) => setField("category", e.target.value)}
@@ -530,20 +546,6 @@ export default function InvoiceForm({
           helperText={showError("expense_type") ? errors.expense_type : ""}
           size="small"
         />
-        <Box className="invoice-card__row-checkbox">
-          <Checkbox
-            label={t("fields.is_paid")}
-            checked={formData.is_paid}
-            onChange={(e) => setField("is_paid", e.target.checked)}
-            onBlur={() => markTouched("is_paid")}
-            size="small"
-          />
-          {showError("is_paid") && errors.is_paid ? (
-            <Typography variant="caption" color="error">
-              {errors.is_paid}
-            </Typography>
-          ) : null}
-        </Box>
         <TextField
           label={t("fields.comments")}
           value={formData.comments}
@@ -551,10 +553,7 @@ export default function InvoiceForm({
           onBlur={() => markTouched("comments")}
           error={showError("comments") && !!errors.comments}
           helperText={showError("comments") ? errors.comments : ""}
-          multiline
-          rows={2}
           size="small"
-          className="invoice-card__full"
         />
         <Box className="invoice-card__file">
           <FileUploadSingleImage
