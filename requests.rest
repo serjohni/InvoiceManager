@@ -33,3 +33,17 @@ Accept: application/json
 GET {{baseUrl}}/api/invoices
 Authorization: Bearer invalid.token.value
 Accept: application/json
+
+@imagePath = C:/Users/bill_/Desktop/N8N/InvoicesExamples/sample-invoice.jpg
+
+### Analyze invoice image (protected)
+POST {{baseUrl}}/api/upload/image
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="image"; filename="sample-invoice.jpg"
+Content-Type: image/jpeg
+
+< {{imagePath}}
+--WebAppBoundary--
