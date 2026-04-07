@@ -58,7 +58,8 @@ i18n.use(initReactI18next).init({
           comments: "Σχόλια",
           receipt: "Απόδειξη",
           company: "Εταιρεία",
-          users: "Χρήστης",
+          category: "Κατηγορία",
+          expense_type: "Τύπος Εξόδου",
           invoice_date: "Ημ/νία Τιμολογίου",
         },
         file: {
@@ -130,7 +131,8 @@ i18n.use(initReactI18next).init({
           comments: "Comments",
           receipt: "Receipt",
           company: "Company",
-          users: "User",
+          category: "Category",
+          expense_type: "Expense Type",
           invoice_date: "Invoice Date",
         },
         file: {

@@ -19,12 +19,16 @@ export const createInvoiceSchema = z.object({
   vat_amount: z.coerce.number().optional(),
   withholding_amount: z.coerce.number().optional(),
   fees_or_stamps: z.string().optional(),
-  total_amount: z.coerce.number().positive("Total amount must be positive"),
+  total_amount: z.coerce
+    .number()
+    .positive("Total amount must be positive")
+    .optional(),
   issuer_iban: z.string().optional(),
   is_paid: z.boolean().optional(),
   comments: z.string().optional(),
   company: z.string().optional(),
-  createdBy: z.string().optional(),
+  category: z.string().optional(),
+  expense_type: z.string().optional(),
 });
 
 export const updateInvoiceSchema = z.object({
@@ -54,5 +58,6 @@ export const updateInvoiceSchema = z.object({
   is_paid: z.boolean().optional(),
   comments: z.string().optional(),
   company: z.string().optional(),
-  createdBy: z.string().optional(),
+  category: z.string().optional(),
+  expense_type: z.string().optional(),
 });

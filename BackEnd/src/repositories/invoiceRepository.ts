@@ -1,7 +1,7 @@
 import { dbClient } from "../lib/prisma";
 
 type CreateInvoiceData = {
-  invoice_date: Date;
+  invoice_date: Date | null;
   document_type: string;
   mark: string;
   series: string;
@@ -24,6 +24,8 @@ type CreateInvoiceData = {
   is_paid: boolean;
   comments: string;
   company: string;
+  category: string;
+  expense_type: string;
   createdBy: string;
 };
 

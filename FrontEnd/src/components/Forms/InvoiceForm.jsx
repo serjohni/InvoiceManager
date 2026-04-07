@@ -34,7 +34,8 @@ const initialForm = {
   file: null, // ✅ single image
   project: "",
   company: "",
-  users: "",
+  category: "",
+  expense_type: "",
   invoice_date: "",
 };
 
@@ -71,23 +72,6 @@ const COMPANY_OPTIONS = [
   "LAGONISI VENTURES IKE",
   "HOT ΜΟΝΟΠΡΟΣΩΠΗ ΙΚΕ ΤΕΧΝΙΚΗ ΕΤΑΙΡΙΑ & ΕΚΜ/ΣΗ ΑΚΙΝΗΤΩΝ",
   "THE OLON HOSPITALITY ΙΚΕ",
-];
-const USER_OPTIONS = [
-  "Δαλιάνη Αικατερίνη",
-  "Αρχοντάκης Παπαδάκης Ιωάννης",
-  "Νικολάτου Κωνσταντίνα",
-  "Στάθης Σπυρίδων",
-  "Γιώργος Μπερσεντές",
-  "Κόκκαλης Χαράλαμπος",
-  "Abuyousef Kamel",
-  "Mamiseishvili Lasha",
-  "Χαραλαμποπούλου Φωτεινή",
-  "Τσόκα Έλενα",
-  "Πάλιος Κωνσταντίνος",
-  "Λίμνιαλης Γεωργιος",
-  "Χριστίνα Καλομηνίδου",
-  "Σπυρος Σιδέρης",
-  "Γεώργιος Σωτηρχόπουλος",
 ];
 
 const isEmpty = (v) => String(v ?? "").trim().length === 0;
@@ -139,43 +123,47 @@ export default function InvoiceForm({
       comments: true,
       project: true,
       company: true,
-      users: true,
+      category: true,
+      expense_type: true,
       invoice_date: true,
     });
 
-  const errors = useMemo(() => {
-    const e = {};
-    // Required text fields
-    if (isEmpty(formData.project)) e.project = t("validation.required");
-    if (isEmpty(formData.company)) e.company = t("validation.required");
-    if (isEmpty(formData.users)) e.users = t("validation.required");
-    // Comments are optional
-    if (isEmpty(formData.issuer_name)) e.issuer_name = t("validation.required");
-    // Required numeric-ish fields
-    if (isEmpty(formData.issuer_vat_number))
-      e.issuer_vat_number = t("validation.required");
-    else if (!isNumeric(formData.issuer_vat_number))
-      e.issuer_vat_number = t("validation.numbersOnly");
-    else if (String(formData.issuer_vat_number).trim().length !== 9)
-      e.issuer_vat_number = t("validation.afmLength");
-    // Date required
-    if (isEmpty(formData.invoice_date))
-      e.invoice_date = t("validation.required");
-    // Checkbox required (since you said all fields required)
-    if (formData.is_paid !== true && formData.is_paid !== false)
-      e.is_paid = t("validation.checkbox");
-    // If you literally mean user must explicitly choose: force true/false is already explicit.
-    // If you mean "must be checked", uncomment:
-    // if (!formData.is_paid) e.is_paid = "Πρέπει να επιλεγεί.";
-    // Total price required + valid money
-    if (isEmpty(formData.total_amount))
-      e.total_amount = t("validation.required");
-    else if (!isMoney(formData.total_amount))
-      e.total_amount = t("validation.money");
-    // File required
-    // if (!formData.file) e.file = t("validation.uploadReceipt");
-    return e;
-  }, [formData, t]);
+    const errors = useMemo(() => {
+      const e = {};
+      // REQUIRED
+      if (isEmpty(formData.project)) e.project = t("validation.required");
+      if (isEmpty(formData.company)) e.company = t("validation.required");
+      if (isEmpty(formData.number)) e.number = t("validation.required");
+      else if (!isNumeric(formData.number)) e.number = t("validation.numbersOnly");
+      if (isEmpty(formData.issuer_vat_number))
+        e.issuer_vat_number = t("validation.required");
+      else if (!isNumeric(formData.issuer_vat_number))
+        e.issuer_vat_number = t("validation.numbersOnly");
+      else if (String(formData.issuer_vat_number).trim().length !== 9)
+        e.issuer_vat_number = t("validation.afmLength");
+      if (formData.is_paid !== true && formData.is_paid !== false)
+        e.is_paid = t("validation.checkbox");
+      // OPTIONAL BUT VALIDATED IF FILLED
+      if (!isEmpty(formData.mark) && !isNumeric(formData.mark))
+        e.mark = t("validation.numbersOnly");
+      if (!isEmpty(formData.series) && !isNumeric(formData.series))
+        e.series = t("validation.numbersOnly");
+      if (!isEmpty(formData.recipient_vat_number) && !isNumeric(formData.recipient_vat_number))
+        e.recipient_vat_number = t("validation.numbersOnly");
+      if (!isEmpty(formData.value_before_discount) && !isMoney(formData.value_before_discount))
+        e.value_before_discount = t("validation.money");
+      if (!isEmpty(formData.discount_amount) && !isMoney(formData.discount_amount))
+        e.discount_amount = t("validation.money");
+      if (!isEmpty(formData.net_amount) && !isMoney(formData.net_amount))
+        e.net_amount = t("validation.money");
+      if (!isEmpty(formData.vat_amount) && !isMoney(formData.vat_amount))
+        e.vat_amount = t("validation.money");
+      if (!isEmpty(formData.withholding_amount) && !isMoney(formData.withholding_amount))
+        e.withholding_amount = t("validation.money");
+      if (!isEmpty(formData.total_amount) && !isMoney(formData.total_amount))
+        e.total_amount = t("validation.money");
+      return e;
+    }, [formData, t]);
 
   const isValid = useMemo(() => Object.keys(errors).length === 0, [errors]);
   const hasContent = useMemo(
@@ -512,25 +500,29 @@ export default function InvoiceForm({
           ))}
         </TextField>
         <TextField
-          label={t("fields.users")}
-          value={formData.users}
-          onChange={(e) => setField("users", e.target.value)}
-          onBlur={() => markTouched("users")}
-          error={showError("users") && !!errors.users}
-          helperText={showError("users") ? errors.users : ""}
-          select
+          label={t("fields.category")}
+          value={formData.category}
+          onChange={(e) => setField("category", e.target.value)}
+          onBlur={() => markTouched("category")}
+          error={showError("category") && !!errors.category}
+          helperText={showError("category") ? errors.category : ""}
+          multiline
+          rows={2}
           size="small"
-        >
-          <MenuItem value="">
-            <em>-</em>
-          </MenuItem>
-          {USER_OPTIONS.map((option) => (
-            <MenuItem key={option} value={option}>
-              {option}
-            </MenuItem>
-          ))}
-        </TextField>
-
+          className="invoice-card__full"
+        />
+        <TextField
+          label={t("fields.expense_type")}
+          value={formData.expense_type}
+          onChange={(e) => setField("expense_type", e.target.value)}
+          onBlur={() => markTouched("expense_type")}
+          error={showError("expense_type") && !!errors.expense_type}
+          helperText={showError("expense_type") ? errors.expense_type : ""}
+          multiline
+          rows={2}
+          size="small"
+          className="invoice-card__full"
+        />
         <Box className="invoice-card__row-checkbox">
           <Checkbox
             label={t("fields.is_paid")}

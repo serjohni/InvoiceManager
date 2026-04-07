@@ -47,3 +47,19 @@ Content-Type: image/jpeg
 
 < {{imagePath}}
 --WebAppBoundary--
+
+
+
+### Create invoice (required fields only)
+POST {{baseUrl}}/api/invoices
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "project": "KIRKIS",
+  "company": "HERITAGE VENTURES IKE",
+  "is_paid": false,
+  "number": "12345",
+  "issuer_vat_number": "123456789"
+}
