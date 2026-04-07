@@ -18,7 +18,6 @@ services:
     image: n8nio/n8n:latest
     restart: unless-stopped
     environment:
-      N8N_CONCURRENCY_PRODUCTION_LIMIT: 5
       N8N_SECURE_COOKIE: false
       N8N_HOST: 0.0.0.0
       N8N_PORT: 5678
@@ -71,6 +70,6 @@ services:
     command: ["npm", "run", "prisma:migrate:deploy"]
 
 volumes:
-  postgres_data:
+  postgres_data: 
   n8n_data:
   backend_uploads:
