@@ -25,7 +25,7 @@ uploadRouter.post("/image", upload.single("image"), async (req, res) => {
     });
 
     const webhookResponse = await axios.post(
-      "http://100.104.68.112:5678/webhook/upload-invoice-image",
+      "http://n8n:5678/webhook/upload-invoice-image",
       formData,
       {
         headers: formData.getHeaders(),
