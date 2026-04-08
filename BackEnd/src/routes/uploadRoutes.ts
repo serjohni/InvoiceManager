@@ -7,7 +7,7 @@ import axios from "axios";
 import { config, requireEnv } from "../config/env";
 
 const uploadRouter = Router();
-const n8nWebhookUrl = requireEnv(config.n8nWebhookUrl, "N8N_WEBHOOK_URL");
+//const n8nWebhookUrl = requireEnv(config.n8nWebhookUrl, "N8N_WEBHOOK_URL");
 
 // Upload single image
 uploadRouter.post("/image", upload.single("image"), async (req, res) => {
@@ -24,10 +24,22 @@ uploadRouter.post("/image", upload.single("image"), async (req, res) => {
       contentType: req.file.mimetype,
     });
 
-    const webhookResponse = await axios.post(n8nWebhookUrl, formData, {
+    const webhookResponse = await axios.post(
+      "http://100.104.68.112:5678/webhook/upload-invoice-image",
+      formData,
+      {
         headers: formData.getHeaders(),
-    });
-
+      },
+    );
+    const webhookPayload = Array.isArray(webhookResponse.data)
+      ? webhookResponse.data[0]
+      : webhookResponse.data;
+    if (webhookPayload?.error !== undefined) {
+      return res.status(422).json({
+        error: "Failed to upload image",
+        details: webhookPayload.error || "Unknown error",
+      });
+    }
     res.status(201).json({
       message: "Image uploaded and forwarded successfully",
       file: {
@@ -39,7 +51,7 @@ uploadRouter.post("/image", upload.single("image"), async (req, res) => {
       },
       webhook: {
         status: webhookResponse.status,
-        data: webhookResponse.data[0],
+        data: webhookPayload,
       },
     });
   } catch (error: any) {

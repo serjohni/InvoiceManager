@@ -1,0 +1,65 @@
+@baseUrl = http://localhost:8080
+@username = vliapis
+@password = admin123
+
+### Health check
+GET {{baseUrl}}/health
+Accept: application/json
+
+### Login (get JWT access token)
+# @name login
+POST {{baseUrl}}/api/users/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "user_name": "{{username}}",
+  "password": "{{password}}"
+}
+
+### Save token from login response
+@accessToken = {{login.response.body.accessToken}}
+
+### Negative test: protected endpoint without token (should be 401 once auth is applied)
+GET {{baseUrl}}/api/invoices
+Accept: application/json
+
+### Protected endpoint with Bearer token
+GET {{baseUrl}}/api/invoices
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+### Protected endpoint with invalid token
+GET {{baseUrl}}/api/invoices
+Authorization: Bearer invalid.token.value
+Accept: application/json
+
+@imagePath = C:/Users/bill_/Desktop/N8N/InvoicesExamples/sample-invoice.jpg
+
+### Analyze invoice image (protected)
+POST {{baseUrl}}/api/upload/image
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="image"; filename="sample-invoice.jpg"
+Content-Type: image/jpeg
+
+< {{imagePath}}
+--WebAppBoundary--
+
+
+
+### Create invoice (required fields only)
+POST {{baseUrl}}/api/invoices
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "project": "KIRKIS",
+  "company": "HERITAGE VENTURES IKE",
+  "is_paid": false,
+  "number": "12345",
+  "issuer_vat_number": "123456789"
+}

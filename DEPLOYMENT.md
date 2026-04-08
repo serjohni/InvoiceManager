@@ -118,3 +118,8 @@ docker compose up -d
 - Allow LAN access to `8080`
 - Allow `5678` only for admins if employees should not use the n8n UI
 - Do not expose Postgres to the LAN
+
+# When migrations dont apply
+
+docker compose --profile tools build --no-cache backend-migrate
+docker compose --profile tools run --rm backend-migrate

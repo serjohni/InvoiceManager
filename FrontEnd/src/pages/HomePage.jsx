@@ -12,18 +12,20 @@ import {
   Backdrop,
   CircularProgress,
 } from "@mui/material";
-import InvoiceForm from "./components/Forms/InvoiceForm";
-import "./App.css";
 import AddIcon from "@mui/icons-material/Add";
 import { useTranslation } from "react-i18next";
 import axios from "axios";
-import { createInvoiceSchema } from "./schemas/invoiceSchemas";
+import { apiClient } from "../services/apiClient";
 
-const apiBaseUrl = (
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080"
-).replace(/\/$/, "");
+import InvoiceForm from "../components/Forms/InvoiceForm";
+import { createInvoiceSchema } from "../schemas/invoiceSchemas";
+import { clearToken } from "../services/auth";
+import { useNavigate } from "react-router-dom";
+import "../App.css";
+import { getUserFullNameFromToken } from "../services/auth";
 
-function App() {
+export default function HomePage() {
+  const navigate = useNavigate();
   const [forms, setForms] = useState([{}]);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
@@ -34,10 +36,14 @@ function App() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { t, i18n } = useTranslation();
   const isUiLocked = busyFormIndexes.size > 0 || isSubmitting;
+  const user = getUserFullNameFromToken();
 
-  const handleAddNew = () => {
-    setForms((prev) => [...prev, {}]);
+  const handleLogout = () => {
+    clearToken();
+    navigate("/login", { replace: true });
   };
+
+  const handleAddNew = () => setForms((prev) => [...prev, {}]);
 
   const handleFormChange = useCallback((index, formData) => {
     setForms((prev) => {
@@ -54,11 +60,8 @@ function App() {
   const handleAnalysisStateChange = useCallback((formIndex, isBusy) => {
     setBusyFormIndexes((prev) => {
       const next = new Set(prev);
-      if (isBusy) {
-        next.add(formIndex);
-      } else {
-        next.delete(formIndex);
-      }
+      if (isBusy) next.add(formIndex);
+      else next.delete(formIndex);
       return next;
     });
   }, []);
@@ -71,27 +74,25 @@ function App() {
   const handleComplete = async () => {
     if (isUiLocked) return;
     setSubmitAttempted(true);
-
-    if (!allValid) {
-      console.log("Validation failed", forms);
-      return;
-    }
+    if (!allValid) return;
 
     setIsSubmitting(true);
     try {
       await Promise.all(
         forms.map((form) => {
           const payload = createInvoiceSchema.parse(form);
+          console.log("payload", payload);
           return Promise.allSettled([
-            axios.post(`${apiBaseUrl}/api/invoices`, payload),
+            apiClient.post(`/api/invoices`, payload),
             axios.post(
               "http://100.104.68.112:5678/webhook/upload-invoice-data",
-              payload,
+              { ...payload, user: user },
               { headers: { "Content-Type": "application/json" } },
             ),
           ]);
         }),
       );
+
       setShowSuccess(true);
       setForms([{}]);
       setSubmitAttempted(false);
@@ -99,7 +100,6 @@ function App() {
       setShowError(false);
       setResetVersion((v) => v + 1);
     } catch (error) {
-      console.error("Error creating invoices:", error);
       const fallback = t("app.error");
       const message = axios.isAxiosError(error)
         ? error.response?.data?.message || fallback
@@ -109,21 +109,19 @@ function App() {
     } finally {
       setIsSubmitting(false);
     }
-    // console.log("All forms data:", forms);
-    // setShowSuccess(true);
   };
+
   const handleCloseError = () => setShowError(false);
   const handleCloseSuccess = () => setShowSuccess(false);
 
   const handleLanguageChange = (language) => {
     i18n.changeLanguage(language);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("lang", language);
-    }
+    window.localStorage.setItem("lang", language);
   };
 
   return (
     <>
+      {/* header */}
       <Box
         sx={{
           height: 56,
@@ -136,40 +134,32 @@ function App() {
           borderColor: "divider",
         }}
       >
-        <Typography
-          sx={{
-            fontSize: 14,
-            fontWeight: 500,
-            color: "#ffffff",
-            letterSpacing: 0,
-          }}
-        >
+        <Typography sx={{ fontSize: 14, fontWeight: 500, color: "#fff" }}>
           Invoice Manager
         </Typography>
-        <ToggleButtonGroup
-          size="small"
-          value={i18n.language}
-          exclusive
-          onChange={(_, value) => value && handleLanguageChange(value)}
-          disabled={isUiLocked}
-          sx={{
-            "& .MuiToggleButton-root": {
-              fontSize: 13,
-              borderColor: "rgba(255,255,255,0.45)",
-              minWidth: 34,
-              px: 1,
-              py: 0.25,
-            },
-            "& .Mui-selected": {
-              backgroundColor: "rgba(255,255,255,0.22)",
-            },
-          }}
-        >
-          <ToggleButton value="el">EL</ToggleButton>
-          <ToggleButton value="en">EN</ToggleButton>
-        </ToggleButtonGroup>
+
+        <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+          <ToggleButtonGroup
+            size="small"
+            value={i18n.language}
+            exclusive
+            onChange={(_, value) => value && handleLanguageChange(value)}
+            disabled={isUiLocked}
+          >
+            <ToggleButton value="el">EL</ToggleButton>
+            <ToggleButton value="en">EN</ToggleButton>
+          </ToggleButtonGroup>
+          <Button
+            variant="outlined"
+            onClick={handleLogout}
+            disabled={isUiLocked}
+          >
+            Logout
+          </Button>
+        </Box>
       </Box>
 
+      {/* rest of your current App UI unchanged */}
       <Container maxWidth="md" className="app-root">
         <Paper elevation={0} className="forms-group">
           <Box className="forms-group__header">
@@ -199,14 +189,6 @@ function App() {
               onClick={handleAddNew}
               disabled={isUiLocked}
               startIcon={<AddIcon />}
-              sx={{
-                color: "#2f8f6e",
-                borderColor: "#2f8f6e",
-                "&:hover": {
-                  borderColor: "#25785d",
-                  backgroundColor: "rgba(47,143,110,0.08)",
-                },
-              }}
             >
               {t("app.addInvoice")}
             </Button>
@@ -222,6 +204,7 @@ function App() {
             {t("app.completeReview")}
           </Button>
         </Box>
+
         <Backdrop
           open={isUiLocked}
           sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 10 }}
@@ -243,6 +226,7 @@ function App() {
             {t("app.success")}
           </Alert>
         </Snackbar>
+
         <Snackbar
           open={showError}
           autoHideDuration={6000}
@@ -261,5 +245,3 @@ function App() {
     </>
   );
 }
-
-export default App;

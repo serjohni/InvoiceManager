@@ -8,7 +8,7 @@ const invoiceRouter = Router();
 // Create a new invoice
 invoiceRouter.post("/", validate(createInvoiceSchema), async (req, res) => {
   try {
-    const invoice = await invoiceRepository.create(req.body);
+    const invoice = await invoiceRepository.create({...req.body, createdBy: req.user!.user_id});
     res.status(201).json(invoice);
   } catch (error: any) {
     console.error("Error creating invoice:", error);

@@ -25,6 +25,7 @@ i18n.use(initReactI18next).init({
           addInvoice: "Προσθήκη τιμολογίου",
           completeReview: "Ολοκλήρωση ελέγχου",
           success: "Η καταχώρηση των τιμολογίων ολοκληρώθηκε επιτυχώς.",
+          error: "Η καταχώρηση των τιμολογίων απέτυχε. Παρακαλώ δοκίμασε ξανά.",
           language: "Γλώσσα",
         },
         invoice: {
@@ -57,7 +58,8 @@ i18n.use(initReactI18next).init({
           comments: "Σχόλια",
           receipt: "Απόδειξη",
           company: "Εταιρεία",
-          users: "Χρήστης",
+          category: "Κατηγορία",
+          expense_type: "Τύπος Εξόδου",
           invoice_date: "Ημ/νία Τιμολογίου",
         },
         file: {
@@ -96,6 +98,7 @@ i18n.use(initReactI18next).init({
           addInvoice: "Add invoice",
           completeReview: "Complete review",
           success: "Submission completed successfully.",
+          error: "Submission failed. Please try again.",
           language: "Language",
         },
         invoice: {
@@ -128,7 +131,8 @@ i18n.use(initReactI18next).init({
           comments: "Comments",
           receipt: "Receipt",
           company: "Company",
-          users: "User",
+          category: "Category",
+          expense_type: "Expense Type",
           invoice_date: "Invoice Date",
         },
         file: {
