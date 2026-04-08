@@ -92,6 +92,7 @@ export default function InvoiceForm({
   const [touched, setTouched] = useState({});
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStatus, setAnalysisStatus] = useState("");
+  const [analysisError, setAnalysisError] = useState("");
   const { t } = useTranslation();
 
   const setField = (field, value) => {
@@ -201,6 +202,7 @@ export default function InvoiceForm({
     if (!formData.file) {
       setIsAnalyzing(false);
       setAnalysisStatus("");
+      setAnalysisError("");
       onAnalysisStateChange?.(formIndex, false);
       return;
     }
@@ -208,6 +210,7 @@ export default function InvoiceForm({
     const controller = new AbortController();
     setIsAnalyzing(true);
     setAnalysisStatus("running");
+    setAnalysisError("");
     onAnalysisStateChange?.(formIndex, true);
 
     analyzeInvoiceImage(formData.file, { signal: controller.signal })
@@ -224,11 +227,17 @@ export default function InvoiceForm({
           return next;
         });
         setAnalysisStatus("complete");
+        setAnalysisError("");
         markAllTouched();
       })
       .catch((error) => {
         if (error?.name !== "AbortError") {
+          const backendMessage =
+            error?.response?.data?.details ||
+            error?.response?.data?.error ||
+            "Image analysis failed";
           setAnalysisStatus("failed");
+          setAnalysisError(backendMessage);
         }
       })
       .finally(() => {
@@ -571,6 +580,11 @@ export default function InvoiceForm({
               sx={{ mt: 0.5 }}
             >
               {t(`analysis.${analysisStatus}`)}
+            </Typography>
+          ) : null}
+          {analysisError ? (
+            <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+              {analysisError}
             </Typography>
           ) : null}
           {showError("file") && errors.file ? (

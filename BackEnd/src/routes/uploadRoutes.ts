@@ -31,7 +31,15 @@ uploadRouter.post("/image", upload.single("image"), async (req, res) => {
         headers: formData.getHeaders(),
       },
     );
-
+    const webhookPayload = Array.isArray(webhookResponse.data)
+      ? webhookResponse.data[0]
+      : webhookResponse.data;
+    if (webhookPayload?.error !== undefined) {
+      return res.status(422).json({
+        error: "Failed to upload image",
+        details: webhookPayload.error || "Unknown error",
+      });
+    }
     res.status(201).json({
       message: "Image uploaded and forwarded successfully",
       file: {
