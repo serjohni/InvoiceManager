@@ -85,7 +85,7 @@ export default function HomePage() {
           return Promise.allSettled([
             apiClient.post(`/api/invoices`, payload),
             axios.post(
-              "http://n8n:5678/webhook/upload-invoice-data",
+              "http://192.168.1.102:5678/webhook/upload-invoice-data",
               { ...payload, user: user },
               { headers: { "Content-Type": "application/json" } },
             ),
