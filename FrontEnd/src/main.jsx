@@ -10,6 +10,7 @@ import "./i18n";
 import theme from "./theme";
 import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
+import InvoiceFormPage from "./pages/InvoiceFormPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import PublicRoute from "./components/auth/PublicRoute";
 
@@ -33,6 +34,14 @@ createRoot(document.getElementById("root")).render(
               element={
                 <ProtectedRoute>
                   <HomePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/invoices/new"
+              element={
+                <ProtectedRoute>
+                  <InvoiceFormPage />
                 </ProtectedRoute>
               }
             />

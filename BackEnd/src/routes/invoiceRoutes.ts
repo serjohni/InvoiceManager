@@ -6,6 +6,7 @@ import {
   updateInvoiceSchema,
 } from "../schemas/invoiceSchemas";
 import { invoiceRepository } from "../repositories/invoiceRepository";
+import { userRepository } from "../repositories/userRepository";
 import { config } from "../config/env";
 import type { Invoice } from "../generated/prisma/client";
 import type { AuthPayload } from "../types/express";
@@ -14,6 +15,39 @@ const invoiceRouter = Router();
 
 const getUserLabel = (user: AuthPayload) =>
   `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || user.user_name;
+
+const getStoredUserLabel = (user: {
+  user_name: string;
+  first_name: string | null;
+  last_name: string | null;
+}) => `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || user.user_name;
+
+const withCreatedByLabel = async (invoiceOrInvoices: Invoice | Invoice[]) => {
+  const invoices = Array.isArray(invoiceOrInvoices)
+    ? invoiceOrInvoices
+    : [invoiceOrInvoices];
+
+  const userIds = [
+    ...new Set(
+      invoices
+        .map((invoice) => invoice.createdBy)
+        .filter((createdBy): createdBy is string => Boolean(createdBy)),
+    ),
+  ];
+  const users = userIds.length ? await userRepository.findManyByIds(userIds) : [];
+  const userLabels = new Map(
+    users.map((user) => [user.id, getStoredUserLabel(user)]),
+  );
+
+  const enriched = invoices.map((invoice) => ({
+    ...invoice,
+    createdByLabel: invoice.createdBy
+      ? userLabels.get(invoice.createdBy) || invoice.createdBy
+      : "",
+  }));
+
+  return Array.isArray(invoiceOrInvoices) ? enriched : enriched[0];
+};
 
 const buildInvoiceWebhookPayload = (invoice: Invoice) => {
   const { id, createdAt, lastUpdatedAt, ...invoicePayload } = invoice;
@@ -62,7 +96,7 @@ invoiceRouter.post("/", validate(createInvoiceSchema), async (req, res) => {
 invoiceRouter.get("/", async (req, res) => {
   try {
     const invoices = await invoiceRepository.findAll();
-    res.json(invoices);
+    res.json(await withCreatedByLabel(invoices));
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch invoices" });
   }
@@ -75,7 +109,7 @@ invoiceRouter.get("/by-mark/:mark", async (req, res) => {
     if (!invoice) {
       return res.status(404).json({ error: "Invoice not found" });
     }
-    res.json(invoice);
+    res.json(await withCreatedByLabel(invoice));
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch invoice" });
   }
@@ -88,7 +122,7 @@ invoiceRouter.get("/:id", async (req, res) => {
     if (!invoice) {
       return res.status(404).json({ error: "Invoice not found" });
     }
-    res.json(invoice);
+    res.json(await withCreatedByLabel(invoice));
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch invoice" });
   }

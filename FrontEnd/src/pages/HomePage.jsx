@@ -1,368 +1,470 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Container,
-  Button,
-  Box,
-  Typography,
-  Snackbar,
   Alert,
-  Paper,
-  ToggleButton,
-  ToggleButtonGroup,
-  Backdrop,
+  Box,
+  Button,
+  Chip,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
+  Container,
+  MenuItem,
+  Paper,
+  TextField,
+  Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import { useTranslation } from "react-i18next";
-import axios from "axios";
-import { apiClient } from "../services/apiClient";
-
-import InvoiceForm from "../components/Forms/InvoiceForm";
-import {
-  createInvoiceSchema,
-  updateInvoiceSchema,
-} from "../schemas/invoiceSchemas";
-import { clearToken } from "../services/auth";
 import { useNavigate } from "react-router-dom";
+
+import AppHeader from "../components/layout/AppHeader";
 import "../App.css";
+import { apiClient } from "../services/apiClient";
+import { clearToken } from "../services/auth";
+
+const DISPLAY_FIELDS = [
+  "document_type",
+  "invoice_date",
+  "mark",
+  "series",
+  "number",
+  "issuer_vat_number",
+  "issuer_name",
+  "recipient_vat_number",
+  "recipient_name",
+  "recipient_code",
+  "project",
+  "payment_method",
+  "value_before_discount",
+  "discount_amount",
+  "net_amount",
+  "vat_amount",
+  "withholding_amount",
+  "fees_or_stamps",
+  "total_amount",
+  "issuer_iban",
+  "is_paid",
+  "comments",
+  "company",
+  "category",
+  "expense_type",
+];
+
+const getDateKey = (value) => (value ? String(value).slice(0, 10) : "");
+
+const isPresent = (value) => {
+  if (typeof value === "boolean") return true;
+  return String(value ?? "").trim().length > 0;
+};
+
+const formatValue = (field, value, language, t) => {
+  if (value == null || value === "") return t("dashboard.emptyValue");
+  if (field === "invoice_date") {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return date.toLocaleDateString(language === "el" ? "el-GR" : "en-GB");
+  }
+  if (field === "is_paid") {
+    return value ? t("common.yes") : t("common.no");
+  }
+  return String(value);
+};
+
 export default function HomePage() {
   const navigate = useNavigate();
-  const [forms, setForms] = useState([{}]);
-  const [loadedForms, setLoadedForms] = useState([null]);
-  const [formLoadVersions, setFormLoadVersions] = useState([0]);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [showError, setShowError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [submitAttempted, setSubmitAttempted] = useState(false);
-  const [resetVersion, setResetVersion] = useState(0);
-  const [busyFormIndexes, setBusyFormIndexes] = useState(new Set());
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isOpeningExistingInvoice, setIsOpeningExistingInvoice] = useState(false);
-  const [existingInvoiceDialog, setExistingInvoiceDialog] = useState({
-    open: false,
-    formIndex: null,
-    mark: "",
-    message: "",
-  });
   const { t, i18n } = useTranslation();
-  const isUiLocked = busyFormIndexes.size > 0 || isSubmitting;
+  const [invoices, setInvoices] = useState([]);
+  const [filters, setFilters] = useState({
+    recipient_name: "",
+    project: "",
+    invoice_date: "",
+    user: "",
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleLogout = () => {
     clearToken();
     navigate("/login", { replace: true });
   };
 
-  const handleAddNew = () => {
-    setForms((prev) => [...prev, {}]);
-    setLoadedForms((prev) => [...prev, null]);
-    setFormLoadVersions((prev) => [...prev, 0]);
-  };
-
-  const handleFormChange = useCallback((index, formData) => {
-    setForms((prev) => {
-      const next = [...prev];
-      next[index] = formData;
-      return next;
-    });
-  }, []);
-
-  const handleRemoveForm = useCallback((index) => {
-    setForms((prev) => prev.filter((_, i) => i !== index));
-    setLoadedForms((prev) => prev.filter((_, i) => i !== index));
-    setFormLoadVersions((prev) => prev.filter((_, i) => i !== index));
-  }, []);
-
-  const handleAnalysisStateChange = useCallback((formIndex, isBusy) => {
-    setBusyFormIndexes((prev) => {
-      const next = new Set(prev);
-      if (isBusy) next.add(formIndex);
-      else next.delete(formIndex);
-      return next;
-    });
-  }, []);
-
-  const allValid = useMemo(() => {
-    if (!forms.length) return false;
-    return forms.every((f) => f?.isValid === true);
-  }, [forms]);
-
-  const handleExistingInvoiceDetected = useCallback(
-    ({ formIndex, mark, message }) => {
-      setExistingInvoiceDialog({
-        open: true,
-        formIndex,
-        mark: String(mark ?? ""),
-        message: message || t("existingInvoice.defaultMessage"),
-      });
-    },
-    [t],
-  );
-
-  const handleCloseExistingInvoiceDialog = useCallback(() => {
-    if (isOpeningExistingInvoice) return;
-
-    setExistingInvoiceDialog({
-      open: false,
-      formIndex: null,
-      mark: "",
-      message: "",
-    });
-  }, [isOpeningExistingInvoice]);
-
-  const handleOpenExistingInvoice = useCallback(async () => {
-    if (
-      existingInvoiceDialog.formIndex == null ||
-      !existingInvoiceDialog.mark ||
-      isOpeningExistingInvoice
-    ) {
-      return;
+  const loadInvoices = useCallback(async (silent = false) => {
+    if (silent) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
     }
 
-    setIsOpeningExistingInvoice(true);
     try {
-      const response = await apiClient.get(
-        `/api/invoices/by-mark/${encodeURIComponent(existingInvoiceDialog.mark)}`,
-      );
-
-      setLoadedForms((prev) => {
-        const next = [...prev];
-        next[existingInvoiceDialog.formIndex] = response.data;
-        return next;
-      });
-      setFormLoadVersions((prev) => {
-        const next = [...prev];
-        next[existingInvoiceDialog.formIndex] =
-          (next[existingInvoiceDialog.formIndex] || 0) + 1;
-        return next;
-      });
-
-      setExistingInvoiceDialog({
-        open: false,
-        formIndex: null,
-        mark: "",
-        message: "",
-      });
-    } catch (error) {
-      const fallback = t("existingInvoice.fetchError");
-      const message = axios.isAxiosError(error)
-        ? error.response?.data?.details ||
-          error.response?.data?.error ||
-          fallback
-        : fallback;
-      setErrorMessage(message);
-      setShowError(true);
-    } finally {
-      setIsOpeningExistingInvoice(false);
-    }
-  }, [existingInvoiceDialog, isOpeningExistingInvoice, t]);
-
-  const handleComplete = async () => {
-    if (isUiLocked) return;
-    setSubmitAttempted(true);
-    if (!allValid) return;
-
-    setIsSubmitting(true);
-    try {
-      await Promise.all(
-        forms.map((form) => {
-          if (form?.id) {
-            const payload = updateInvoiceSchema.parse(form);
-            return apiClient.patch(`/api/invoices/${form.id}`, payload);
-          }
-
-          const payload = createInvoiceSchema.parse(form);
-          return apiClient.post(`/api/invoices`, payload);
-        }),
-      );
-
-      setShowSuccess(true);
-      setForms([{}]);
-      setLoadedForms([null]);
-      setFormLoadVersions([0]);
-      setSubmitAttempted(false);
+      const response = await apiClient.get("/api/invoices");
+      setInvoices(Array.isArray(response.data) ? response.data : []);
       setErrorMessage("");
-      setShowError(false);
-      setResetVersion((v) => v + 1);
     } catch (error) {
-      const fallback = t("app.error");
-      const message = axios.isAxiosError(error)
-        ? error.response?.data?.message || fallback
-        : fallback;
-      setErrorMessage(message);
-      setShowError(true);
+      console.error("Error fetching invoices:", error);
+      setErrorMessage(t("dashboard.fetchError"));
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
+      setIsRefreshing(false);
     }
-  };
+  }, [t]);
 
-  const handleCloseError = () => setShowError(false);
-  const handleCloseSuccess = () => setShowSuccess(false);
+  useEffect(() => {
+    loadInvoices();
+  }, [loadInvoices]);
 
-  const handleLanguageChange = (language) => {
-    i18n.changeLanguage(language);
-    window.localStorage.setItem("lang", language);
-  };
+  const filterOptions = useMemo(() => {
+    const uniqueValues = (field) =>
+      [...new Set(invoices.map((invoice) => invoice[field]).filter(Boolean))].sort(
+        (first, second) => String(first).localeCompare(String(second)),
+      );
+
+    return {
+      recipients: uniqueValues("recipient_name"),
+      projects: uniqueValues("project"),
+      users: [
+        ...new Set(
+          invoices
+            .map((invoice) => invoice.createdByLabel || invoice.createdBy)
+            .filter(Boolean),
+        ),
+      ].sort((first, second) => String(first).localeCompare(String(second))),
+    };
+  }, [invoices]);
+
+  const filteredInvoices = useMemo(() => {
+    return invoices.filter((invoice) => {
+      if (
+        filters.recipient_name &&
+        invoice.recipient_name !== filters.recipient_name
+      ) {
+        return false;
+      }
+      if (filters.project && invoice.project !== filters.project) return false;
+      if (
+        filters.user &&
+        (invoice.createdByLabel || invoice.createdBy) !== filters.user
+      ) {
+        return false;
+      }
+      if (
+        filters.invoice_date &&
+        getDateKey(invoice.invoice_date) !== filters.invoice_date
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [filters, invoices]);
 
   return (
     <>
-      {/* header */}
-      <Box
-        sx={{
-          height: 56,
-          px: 3,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          bgcolor: "#51af8b",
-          borderBottom: "1px solid",
-          borderColor: "divider",
-        }}
-      >
-        <Typography sx={{ fontSize: 14, fontWeight: 500, color: "#fff" }}>
-          Invoice Manager
-        </Typography>
+      <AppHeader
+        disabled={isLoading || isRefreshing}
+        actions={
+          <>
+            <Button
+              variant="contained"
+              onClick={() => navigate("/invoices/new")}
+              startIcon={<AddIcon />}
+              disabled={isLoading}
+              sx={{
+                bgcolor: "#fff",
+                color: "#2f8f6e",
+                "&:hover": { bgcolor: "#f3fffa" },
+              }}
+            >
+              {t("dashboard.newInvoice")}
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => loadInvoices(true)}
+              startIcon={
+                isRefreshing ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : (
+                  <RefreshIcon />
+                )
+              }
+              disabled={isRefreshing}
+              sx={{
+                color: "#fff",
+                borderColor: "rgba(255,255,255,0.45)",
+              }}
+            >
+              {t("dashboard.refresh")}
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={handleLogout}
+              sx={{
+                color: "#fff",
+                borderColor: "rgba(255,255,255,0.45)",
+              }}
+            >
+              {t("app.logout")}
+            </Button>
+          </>
+        }
+      />
 
-        <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-          <ToggleButtonGroup
-            size="small"
-            value={i18n.language}
-            exclusive
-            onChange={(_, value) => value && handleLanguageChange(value)}
-            disabled={isUiLocked}
+      <Container maxWidth="lg" className="app-root">
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            borderRadius: 4,
+            border: "1px solid #d1d5db",
+            mb: 3,
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 2,
+              flexWrap: "wrap",
+              mb: 2.5,
+            }}
           >
-            <ToggleButton value="el">EL</ToggleButton>
-            <ToggleButton value="en">EN</ToggleButton>
-          </ToggleButtonGroup>
-          <Button
-            variant="outlined"
-            onClick={handleLogout}
-            disabled={isUiLocked}
-          >
-            Logout
-          </Button>
-        </Box>
-      </Box>
-
-      {/* rest of your current App UI unchanged */}
-      <Container maxWidth="md" className="app-root">
-        <Paper elevation={0} className="forms-group">
-          <Box className="forms-group__header">
-            <Typography variant="subtitle1">{t("app.invoices")}</Typography>
-            <Typography variant="caption" color="text.secondary">
-              {t("app.entries", { count: forms.length })}
+            <Box>
+              <Typography variant="h6">{t("dashboard.title")}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t("dashboard.subtitle")}
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary">
+              {t("dashboard.results", {
+                count: filteredInvoices.length,
+                total: invoices.length,
+              })}
             </Typography>
           </Box>
 
-          <Box className="forms-group__list">
-            {forms.map((_, index) => (
-              <InvoiceForm
-                key={`${resetVersion}-${formLoadVersions[index] ?? 0}-${index}`}
-                formIndex={index}
-                onFormChange={handleFormChange}
-                onRemove={handleRemoveForm}
-                onAnalysisStateChange={handleAnalysisStateChange}
-                onExistingInvoiceDetected={handleExistingInvoiceDetected}
-                canRemove={forms.length > 1}
-                submitAttempted={submitAttempted}
-                externalData={loadedForms[index]}
-              />
-            ))}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 2,
+            }}
+          >
+            <TextField
+              label={t("fields.recipient_name")}
+              value={filters.recipient_name}
+              onChange={(event) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  recipient_name: event.target.value,
+                }))
+              }
+              select
+              size="small"
+            >
+              <MenuItem value="">{t("dashboard.all")}</MenuItem>
+              {filterOptions.recipients.map((recipient) => (
+                <MenuItem key={recipient} value={recipient}>
+                  {recipient}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              label={t("fields.project")}
+              value={filters.project}
+              onChange={(event) =>
+                setFilters((prev) => ({ ...prev, project: event.target.value }))
+              }
+              select
+              size="small"
+            >
+              <MenuItem value="">{t("dashboard.all")}</MenuItem>
+              {filterOptions.projects.map((project) => (
+                <MenuItem key={project} value={project}>
+                  {project}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              label={t("dashboard.userFilter")}
+              value={filters.user}
+              onChange={(event) =>
+                setFilters((prev) => ({ ...prev, user: event.target.value }))
+              }
+              select
+              size="small"
+            >
+              <MenuItem value="">{t("dashboard.all")}</MenuItem>
+              {filterOptions.users.map((user) => (
+                <MenuItem key={user} value={user}>
+                  {user}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              label={t("fields.invoice_date")}
+              value={filters.invoice_date}
+              onChange={(event) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  invoice_date: event.target.value,
+                }))
+              }
+              type="date"
+              size="small"
+              InputLabelProps={{ shrink: true }}
+            />
           </Box>
 
-          <Box className="forms-group__footer">
+          <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
             <Button
-              variant="outlined"
-              onClick={handleAddNew}
-              disabled={isUiLocked}
-              startIcon={<AddIcon />}
+              variant="text"
+              onClick={() =>
+                setFilters({
+                  recipient_name: "",
+                  project: "",
+                  invoice_date: "",
+                  user: "",
+                })
+              }
             >
-              {t("app.addInvoice")}
+              {t("dashboard.clearFilters")}
             </Button>
           </Box>
         </Paper>
 
-        <Box className="app-actions">
-          <Button
-            variant="contained"
-            onClick={handleComplete}
-            disabled={!allValid || isUiLocked}
-          >
-            {t("app.completeReview")}
-          </Button>
-        </Box>
-
-        <Backdrop
-          open={isUiLocked}
-          sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 10 }}
-        >
-          <CircularProgress color="inherit" />
-        </Backdrop>
-
-        <Snackbar
-          open={showSuccess}
-          autoHideDuration={6000}
-          onClose={handleCloseSuccess}
-          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-        >
-          <Alert
-            onClose={handleCloseSuccess}
-            severity="success"
-            sx={{ width: "100%" }}
-          >
-            {t("app.success")}
-          </Alert>
-        </Snackbar>
-
-        <Snackbar
-          open={showError}
-          autoHideDuration={6000}
-          onClose={handleCloseError}
-          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-        >
-          <Alert
-            onClose={handleCloseError}
-            severity="error"
-            sx={{ width: "100%" }}
-          >
+        {errorMessage ? (
+          <Alert severity="error" sx={{ mb: 2 }}>
             {errorMessage}
           </Alert>
-        </Snackbar>
-        <Dialog
-          open={existingInvoiceDialog.open}
-          onClose={handleCloseExistingInvoiceDialog}
-          fullWidth
-          maxWidth="xs"
-        >
-          <DialogTitle>{t("existingInvoice.title")}</DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-              {existingInvoiceDialog.message || t("existingInvoice.defaultMessage")}
-            </DialogContentText>
-            <DialogContentText sx={{ mt: 1 }}>
-              {t("existingInvoice.prompt", { mark: existingInvoiceDialog.mark })}
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button
-              onClick={handleCloseExistingInvoiceDialog}
-              disabled={isOpeningExistingInvoice}
-            >
-              {t("existingInvoice.cancel")}
-            </Button>
-            <Button
-              onClick={handleOpenExistingInvoice}
-              variant="contained"
-              disabled={isOpeningExistingInvoice}
-            >
-              {t("existingInvoice.confirm")}
-            </Button>
-          </DialogActions>
-        </Dialog>
+        ) : null}
+
+        {isLoading ? (
+          <Box
+            sx={{
+              minHeight: 240,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <CircularProgress />
+          </Box>
+        ) : filteredInvoices.length === 0 ? (
+          <Paper
+            elevation={0}
+            sx={{
+              p: 4,
+              borderRadius: 4,
+              border: "1px solid #d1d5db",
+              textAlign: "center",
+            }}
+          >
+            <Typography variant="h6" gutterBottom>
+              {t("dashboard.emptyTitle")}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {invoices.length === 0
+                ? t("dashboard.emptyDescription")
+                : t("dashboard.noMatches")}
+            </Typography>
+          </Paper>
+        ) : (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {filteredInvoices.map((invoice) => {
+              const visibleEntries = DISPLAY_FIELDS.filter((field) =>
+                isPresent(invoice[field]),
+              );
+
+              return (
+                <Paper
+                  key={invoice.id}
+                  elevation={0}
+                  sx={{
+                    p: 3,
+                    borderRadius: 4,
+                    border: "1px solid #d1d5db",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      justifyContent: "space-between",
+                      gap: 2,
+                      flexWrap: "wrap",
+                      mb: 2,
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="h6" sx={{ mb: 0.5 }}>
+                        {invoice.issuer_name ||
+                          invoice.recipient_name ||
+                          t("dashboard.invoiceFallback")}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {[invoice.company, invoice.project]
+                          .filter(Boolean)
+                          .join(" • ") || t("dashboard.emptyValue")}
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                      <Chip
+                        label={`${t("fields.invoice_date")}: ${formatValue(
+                          "invoice_date",
+                          invoice.invoice_date,
+                          i18n.language,
+                          t,
+                        )}`}
+                        variant="outlined"
+                      />
+                      <Chip
+                        label={`${t("fields.is_paid")}: ${formatValue(
+                          "is_paid",
+                          invoice.is_paid,
+                          i18n.language,
+                          t,
+                        )}`}
+                        color={invoice.is_paid ? "success" : "default"}
+                        variant={invoice.is_paid ? "filled" : "outlined"}
+                      />
+                    </Box>
+                  </Box>
+
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                      gap: 1.5,
+                    }}
+                  >
+                    {visibleEntries.map((field) => (
+                      <Box
+                        key={`${invoice.id}-${field}`}
+                        sx={{
+                          p: 1.5,
+                          borderRadius: 2,
+                          backgroundColor: "#f8fafc",
+                          border: "1px solid #e5e7eb",
+                        }}
+                      >
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ display: "block", mb: 0.5 }}
+                        >
+                          {t(`fields.${field}`)}
+                        </Typography>
+                        <Typography variant="body2" sx={{ wordBreak: "break-word" }}>
+                          {formatValue(field, invoice[field], i18n.language, t)}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                </Paper>
+              );
+            })}
+          </Box>
+        )}
       </Container>
     </>
   );
