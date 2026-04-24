@@ -50,7 +50,14 @@ const DISPLAY_FIELDS = [
   "expense_type",
 ];
 
-const getDateKey = (value) => (value ? String(value).slice(0, 10) : "");
+const getInvoiceMonthKey = (value) => (value ? String(value).slice(0, 7) : "");
+const getCurrentMonthFilter = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+
+  return `${year}-${month}`;
+};
 
 const isPresent = (value) => {
   if (typeof value === "boolean") return true;
@@ -77,7 +84,7 @@ export default function HomePage() {
   const [filters, setFilters] = useState({
     recipient_name: "",
     project: "",
-    invoice_date: "",
+    invoice_date: getCurrentMonthFilter(),
     user: "",
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -149,7 +156,7 @@ export default function HomePage() {
       }
       if (
         filters.invoice_date &&
-        getDateKey(invoice.invoice_date) !== filters.invoice_date
+        getInvoiceMonthKey(invoice.invoice_date) !== filters.invoice_date
       ) {
         return false;
       }
@@ -309,7 +316,7 @@ export default function HomePage() {
                   invoice_date: event.target.value,
                 }))
               }
-              type="date"
+              type="month"
               size="small"
               InputLabelProps={{ shrink: true }}
             />
