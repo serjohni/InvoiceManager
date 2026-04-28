@@ -65,6 +65,8 @@ const isPresent = (value) => {
   return String(value ?? "").trim().length > 0;
 };
 
+const UNASSIGNED_PROJECT_FILTER = "__UNASSIGNED__";
+
 const formatValue = (field, value, language, t) => {
   if (value == null || value === "") return t("dashboard.emptyValue");
   if (field === "invoice_date") {
@@ -170,7 +172,7 @@ export default function HomePage() {
 
   const filterOptions = useMemo(() => {
     const uniqueValues = (field) =>
-      [...new Set(invoices.map((invoice) => invoice[field]).filter(Boolean))].sort(
+      [...new Set(invoices.map((invoice) => invoice[field]).filter(isPresent))].sort(
         (first, second) => String(first).localeCompare(String(second)),
       );
 
@@ -195,7 +197,11 @@ export default function HomePage() {
       ) {
         return false;
       }
-      if (filters.project && invoice.project !== filters.project) return false;
+      if (filters.project === UNASSIGNED_PROJECT_FILTER) {
+        if (isPresent(invoice.project)) return false;
+      } else if (filters.project && invoice.project !== filters.project) {
+        return false;
+      }
       if (
         filters.user &&
         (invoice.createdByLabel || invoice.createdBy) !== filters.user
@@ -333,6 +339,9 @@ export default function HomePage() {
               size="small"
             >
               <MenuItem value="">{t("dashboard.all")}</MenuItem>
+              <MenuItem value={UNASSIGNED_PROJECT_FILTER}>
+                {t("dashboard.none")}
+              </MenuItem>
               {filterOptions.projects.map((project) => (
                 <MenuItem key={project} value={project}>
                   {project}
