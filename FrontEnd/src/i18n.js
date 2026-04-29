@@ -38,6 +38,7 @@ i18n.use(initReactI18next).init({
           subtitle:
             "Δες τα τιμολόγια και φιλτράρισέ τα ανά αποδέκτη, έργο, χρήστη ή ημερομηνία.",
           results: "{{count}} από {{total}} τιμολόγια",
+          costCenter: "ΚΕΝΤΡΟ ΚΟΣΤΟΥΣ",
           newInvoice: "Νέο Τιμολόγιο",
           previewInvoice: "Προεπισκόπηση",
           previewTitle: "Προεπισκόπηση αρχείου",
@@ -164,6 +165,7 @@ i18n.use(initReactI18next).init({
           subtitle:
             "View invoices and filter them by recipient, project, user, or invoice date.",
           results: "{{count}} of {{total}} invoices",
+          costCenter: "Cost Center",
           newInvoice: "New Invoice",
           previewInvoice: "Preview",
           previewTitle: "File preview",

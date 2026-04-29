@@ -23,33 +23,7 @@ import "../App.css";
 import { apiClient } from "../services/apiClient";
 import { clearToken } from "../services/auth";
 
-const DISPLAY_FIELDS = [
-  "document_type",
-  "invoice_date",
-  "mark",
-  "series",
-  "number",
-  "issuer_vat_number",
-  "issuer_name",
-  "recipient_vat_number",
-  "recipient_name",
-  "recipient_code",
-  "project",
-  "payment_method",
-  "value_before_discount",
-  "discount_amount",
-  "net_amount",
-  "vat_amount",
-  "withholding_amount",
-  "fees_or_stamps",
-  "total_amount",
-  "issuer_iban",
-  "is_paid",
-  "comments",
-  "company",
-  "category",
-  "expense_type",
-];
+const DISPLAY_FIELDS = ["recipient_name", "expense_type", "total_amount"];
 
 const getInvoiceMonthKey = (value) => (value ? String(value).slice(0, 7) : "");
 const getCurrentMonthFilter = () => {
@@ -481,9 +455,13 @@ export default function HomePage() {
                             t("dashboard.invoiceFallback")}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {[invoice.company, invoice.project]
-                            .filter(Boolean)
-                            .join(" • ") || t("dashboard.emptyValue")}
+                          {`${t("dashboard.costCenter")
+                            .toLocaleUpperCase(i18n.language)}: ${formatValue(
+                            "project",
+                            invoice.project,
+                            i18n.language,
+                            t,
+                          )}`}
                         </Typography>
                       </Box>
 
