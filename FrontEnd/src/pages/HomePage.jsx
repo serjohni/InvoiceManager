@@ -466,6 +466,13 @@ export default function HomePage() {
                       </Box>
 
                       <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                        {isSelectedPreview ? (
+                          <Chip
+                            label={t("dashboard.previewSelected")}
+                            color="success"
+                            variant="filled"
+                          />
+                        ) : null}
                         <Chip
                           label={`${t("fields.invoice_date")}: ${formatValue(
                             "invoice_date",
@@ -568,8 +575,10 @@ export default function HomePage() {
                     selectedPreviewInvoice.file_url,
                   );
 
+                  let previewContent;
+
                   if (previewConfig.kind === "image") {
-                    return (
+                    previewContent = (
                       <Box
                         component="img"
                         src={previewConfig.src}
@@ -587,10 +596,8 @@ export default function HomePage() {
                         }}
                       />
                     );
-                  }
-
-                  if (previewConfig.kind === "iframe") {
-                    return (
+                  } else if (previewConfig.kind === "iframe") {
+                    previewContent = (
                       <Box
                         component="iframe"
                         src={previewConfig.src}
@@ -604,36 +611,73 @@ export default function HomePage() {
                         }}
                       />
                     );
+                  } else {
+                    previewContent = (
+                      <Box
+                        sx={{
+                          height: 520,
+                          display: "flex",
+                          flexDirection: "column",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          textAlign: "center",
+                          gap: 2,
+                          px: 3,
+                          borderRadius: 2,
+                          border: "1px solid #e5e7eb",
+                          backgroundColor: "#f8fafc",
+                        }}
+                      >
+                        <Typography variant="body2" color="text.secondary">
+                          {t("dashboard.previewUnsupported")}
+                        </Typography>
+                        <Button
+                          variant="contained"
+                          component="a"
+                          href={selectedPreviewInvoice.file_url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {t("dashboard.openOriginalFile")}
+                        </Button>
+                      </Box>
+                    );
                   }
 
                   return (
-                    <Box
-                      sx={{
-                        height: 520,
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        textAlign: "center",
-                        gap: 2,
-                        px: 3,
-                        borderRadius: 2,
-                        border: "1px solid #e5e7eb",
-                        backgroundColor: "#f8fafc",
-                      }}
-                    >
-                      <Typography variant="body2" color="text.secondary">
-                        {t("dashboard.previewUnsupported")}
-                      </Typography>
-                      <Button
-                        variant="contained"
-                        component="a"
-                        href={selectedPreviewInvoice.file_url}
-                        target="_blank"
-                        rel="noreferrer"
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                      <Box
+                        sx={{
+                          p: 1.5,
+                          borderRadius: 2,
+                          border: "1px solid rgba(81, 175, 139, 0.35)",
+                          backgroundColor: "rgba(81, 175, 139, 0.08)",
+                        }}
                       >
-                        {t("dashboard.openOriginalFile")}
-                      </Button>
+                        <Typography
+                          variant="overline"
+                          sx={{ display: "block", color: "#2f8f6e", lineHeight: 1.4 }}
+                        >
+                          {t("dashboard.previewSelectionTitle")}
+                        </Typography>
+                        <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                          {selectedPreviewInvoice.recipient_name ||
+                            selectedPreviewInvoice.issuer_name ||
+                            t("dashboard.invoiceFallback")}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {`${t("dashboard.costCenter").toLocaleUpperCase(
+                            i18n.language,
+                          )}: ${formatValue(
+                            "project",
+                            selectedPreviewInvoice.project,
+                            i18n.language,
+                            t,
+                          )}`}
+                        </Typography>
+                      </Box>
+
+                      {previewContent}
                     </Box>
                   );
                 })()
