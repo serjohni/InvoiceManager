@@ -432,6 +432,7 @@ export default function HomePage() {
                 const hasPreview = Boolean(String(invoice.file_url ?? "").trim());
                 const isSelectedPreview = selectedPreviewInvoice?.id === invoice.id;
                 const invoiceIdentifier = getInvoiceIdentifier(invoice, t);
+                const isMissingCostCenter = !isPresent(invoice.project);
 
                 return (
                   <Paper
@@ -440,11 +441,17 @@ export default function HomePage() {
                     sx={{
                       p: 3,
                       borderRadius: 4,
+                      backgroundColor: isMissingCostCenter ? "#fee2e2" : "#fff",
                       border: isSelectedPreview
                         ? "1px solid #51af8b"
+                        : isMissingCostCenter
+                          ? "1px solid #fca5a5"
                         : "1px solid #d1d5db",
+                      borderLeft: isMissingCostCenter ? "6px solid #dc2626" : undefined,
                       boxShadow: isSelectedPreview
                         ? "0 0 0 3px rgba(81, 175, 139, 0.12)"
+                        : isMissingCostCenter
+                          ? "0 8px 24px rgba(220, 38, 38, 0.08)"
                         : "none",
                     }}
                   >
@@ -462,7 +469,11 @@ export default function HomePage() {
                         <Typography variant="h6" sx={{ mb: 0.5 }}>
                           {invoiceIdentifier}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography
+                          variant="body2"
+                          color={isMissingCostCenter ? "#b91c1c" : "text.secondary"}
+                          sx={{ fontWeight: isMissingCostCenter ? 600 : 400 }}
+                        >
                           {`${t("dashboard.costCenter")
                             .toLocaleUpperCase(i18n.language)}: ${formatValue(
                             "project",
@@ -530,8 +541,10 @@ export default function HomePage() {
                           sx={{
                             p: 1.5,
                             borderRadius: 2,
-                            backgroundColor: "#f8fafc",
-                            border: "1px solid #e5e7eb",
+                            backgroundColor: isMissingCostCenter ? "#fff" : "#f8fafc",
+                            border: isMissingCostCenter
+                              ? "1px solid #fecaca"
+                              : "1px solid #e5e7eb",
                           }}
                         >
                           <Typography
