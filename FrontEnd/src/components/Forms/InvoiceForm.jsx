@@ -139,6 +139,27 @@ export const COMPANY_OPTIONS = Object.keys(COMPANY_PROJECT_OPTIONS);
 const isEmpty = (v) => String(v ?? "").trim().length === 0;
 const isNumeric = (v) => /^[0-9]+$/.test(String(v ?? "").trim());
 const isMoney = (v) => /^[0-9]+([.,][0-9]{1,2})?$/.test(String(v ?? "").trim());
+const PARTIAL_UPDATE_IGNORED_FIELDS = new Set(["id", "file"]);
+
+const valuesMatch = (first, second) => {
+  if (typeof first === "boolean" || typeof second === "boolean") {
+    return first === second;
+  }
+
+  return String(first ?? "") === String(second ?? "");
+};
+
+const getChangedFields = (formData, originalData) => {
+  return Object.keys(initialForm).reduce((changedFields, key) => {
+    if (PARTIAL_UPDATE_IGNORED_FIELDS.has(key)) return changedFields;
+    if (valuesMatch(formData[key], originalData[key])) return changedFields;
+
+    return {
+      ...changedFields,
+      [key]: formData[key],
+    };
+  }, {});
+};
 
 export default function InvoiceForm({
   formIndex,
@@ -148,7 +169,12 @@ export default function InvoiceForm({
   submitAttempted = false,
   externalData = null,
   approverOptions = [],
+  allowPartialUpdate = false,
 }) {
+  const originalFormData = useMemo(
+    () => normalizeIncomingFormData(externalData || initialForm),
+    [externalData],
+  );
   const [formData, setFormData] = useState(() =>
     normalizeIncomingFormData(externalData || initialForm),
   );
@@ -177,21 +203,27 @@ export default function InvoiceForm({
 
   const errors = useMemo(() => {
     const e = {};
-    // REQUIRED
-    if (isEmpty(formData.project)) e.project = t("validation.required");
-    if (isEmpty(formData.company)) e.company = t("validation.required");
-    if (isEmpty(formData.number)) e.number = t("validation.required");
-    else if (!isNumeric(formData.number))
+
+    if (!allowPartialUpdate) {
+      if (isEmpty(formData.project)) e.project = t("validation.required");
+      if (isEmpty(formData.company)) e.company = t("validation.required");
+      if (isEmpty(formData.number)) e.number = t("validation.required");
+      if (isEmpty(formData.issuer_vat_number))
+        e.issuer_vat_number = t("validation.required");
+      if (formData.is_paid !== true && formData.is_paid !== false)
+        e.is_paid = t("validation.checkbox");
+    }
+
+    // Optional fields still need valid formats when they are filled.
+    if (!isEmpty(formData.number) && !isNumeric(formData.number))
       e.number = t("validation.numbersOnly");
-    if (isEmpty(formData.issuer_vat_number))
-      e.issuer_vat_number = t("validation.required");
-    else if (!isNumeric(formData.issuer_vat_number))
+    if (!isEmpty(formData.issuer_vat_number) && !isNumeric(formData.issuer_vat_number))
       e.issuer_vat_number = t("validation.numbersOnly");
-    else if (String(formData.issuer_vat_number).trim().length !== 9)
+    else if (
+      !isEmpty(formData.issuer_vat_number) &&
+      String(formData.issuer_vat_number).trim().length !== 9
+    )
       e.issuer_vat_number = t("validation.afmLength");
-    if (formData.is_paid !== true && formData.is_paid !== false)
-      e.is_paid = t("validation.checkbox");
-    // OPTIONAL BUT VALIDATED IF FILLED
     if (!isEmpty(formData.mark) && !isNumeric(formData.mark))
       e.mark = t("validation.numbersOnly");
     if (!isEmpty(formData.series) && !isNumeric(formData.series))
@@ -223,9 +255,17 @@ export default function InvoiceForm({
     if (!isEmpty(formData.total_amount) && !isMoney(formData.total_amount))
       e.total_amount = t("validation.money");
     return e;
-  }, [formData, t]);
+  }, [allowPartialUpdate, formData, t]);
 
   const isValid = useMemo(() => Object.keys(errors).length === 0, [errors]);
+  const changedFields = useMemo(
+    () => getChangedFields(formData, originalFormData),
+    [formData, originalFormData],
+  );
+  const isDirty = useMemo(
+    () => Object.keys(changedFields).length > 0,
+    [changedFields],
+  );
   const hasContent = useMemo(
     () =>
       Boolean(
@@ -241,8 +281,8 @@ export default function InvoiceForm({
 
   // push updates up
   useEffect(() => {
-    onFormChange?.(formIndex, { ...formData, isValid, errors });
-  }, [formData, formIndex, onFormChange, isValid, errors]);
+    onFormChange?.(formIndex, { ...formData, isValid, errors, changedFields, isDirty });
+  }, [changedFields, errors, formData, formIndex, isDirty, isValid, onFormChange]);
 
   const showError = (field) => submitAttempted || touched[field];
 

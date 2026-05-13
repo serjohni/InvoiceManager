@@ -121,7 +121,11 @@ export default function InvoiceFormPage() {
     if (!forms.length) return false;
     return forms.every((form) => form?.isValid === true);
   }, [forms]);
-  const canSubmit = isEditMode ? allValid : isUploadValid;
+  const hasEditableChanges = useMemo(() => {
+    if (!forms.length) return false;
+    return forms.some((form) => form?.isDirty || !form?.id);
+  }, [forms]);
+  const canSubmit = isEditMode ? allValid && hasEditableChanges : isUploadValid;
 
   const setUploadField = (field, value) => {
     setUploadForm((prev) => ({
@@ -333,9 +337,12 @@ export default function InvoiceFormPage() {
       }
 
       const responses = await Promise.all(
-        forms.map((form) => {
+        forms.map((form, index) => {
           if (form?.id) {
-            const payload = updateInvoiceSchema.parse(form);
+            const payload = updateInvoiceSchema.parse(form.changedFields ?? {});
+            if (!Object.keys(payload).length) {
+              return Promise.resolve({ data: loadedForms[index] ?? form });
+            }
             return apiClient.patch(`/api/invoices/${form.id}`, payload);
           }
 
@@ -432,6 +439,7 @@ export default function InvoiceFormPage() {
                   submitAttempted={submitAttempted}
                   externalData={loadedForms[index]}
                   approverOptions={approverOptions}
+                  allowPartialUpdate
                 />
               ))}
             </Box>
