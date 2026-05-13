@@ -11,6 +11,7 @@ import theme from "./theme";
 import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import InvoiceFormPage from "./pages/InvoiceFormPage";
+import ProjectTotalsDashboardPage from "./pages/ProjectTotalsDashboardPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import PublicRoute from "./components/auth/PublicRoute";
 
@@ -50,6 +51,14 @@ createRoot(document.getElementById("root")).render(
               element={
                 <ProtectedRoute>
                   <InvoiceFormPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/project-totals"
+              element={
+                <ProtectedRoute>
+                  <ProjectTotalsDashboardPage />
                 </ProtectedRoute>
               }
             />

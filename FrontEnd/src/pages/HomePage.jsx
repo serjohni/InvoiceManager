@@ -12,6 +12,7 @@ import {
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import AssessmentIcon from "@mui/icons-material/Assessment";
 import EditIcon from "@mui/icons-material/Edit";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -311,6 +312,17 @@ export default function HomePage() {
               }}
             >
               {t("dashboard.newInvoice")}
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => navigate("/dashboard/project-totals")}
+              startIcon={<AssessmentIcon />}
+              sx={{
+                color: "#fff",
+                borderColor: "rgba(255,255,255,0.45)",
+              }}
+            >
+              {t("projectTotals.navLabel")}
             </Button>
             <Button
               variant="outlined"
