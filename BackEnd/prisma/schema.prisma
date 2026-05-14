@@ -60,3 +60,11 @@ model Invoice {
   createdAt      DateTime @default(now())
   lastUpdatedAt  DateTime @updatedAt
 }
+
+model CompanyVatRegistry {
+  vat_number   String   @id
+  company_name String
+  source       String?  @default("auto")
+  created_at   DateTime? @default(now())
+  updated_at   DateTime? @default(now())
+}
